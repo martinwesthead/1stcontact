@@ -5,7 +5,7 @@ type: comment
 title: Comment on chat CHAT-2
 created_by: xgd
 created_at: '2026-06-30T00:59:35.002204+00:00'
-updated_at: '2026-06-30T16:57:30.867600+00:00'
+updated_at: '2026-06-30T16:59:50.620429+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -189,5 +189,49 @@ Want me to pull REQ-10 (and 11/7) over now? If so I can also reconcile the accou
 <!-- xgd-chat role="user" ts="2026-06-30T16:57:02.786Z" -->
 #### You
 I agree with your data model, please pull over the relevant tickets and shift the language from organization to account. No need to preserve ticket IDs as they come over
+
+<!-- xgd-turn id="016c56d0-3083-4a93-b2a0-65ac3e0d860c-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-06-30T16:59:50.589Z" -->
+#### Claude
+Let me gather the source bodies for REQ-7 and REQ-11, and audit every "organization/org" mention across the tickets I'll pull plus the docs already copied (so the naming reconciles everywhere).
+
+REQ-7/10/11 already use "account" exclusively — good. The "organization" language lives in the **already-copied docs DOC-1 and DOC-5**. Let me audit those so I can reconcile them too.
+
+The `get --json` isn't returning body. Let me use the `list --view` path that worked earlier.
+
+Let me see the exact full text of those lines so my replacements are precise.
+
+Now I have what I need. I'll: (1) pull source REQ-7, REQ-10, REQ-11 (fresh IDs, stale impl fields dropped, bodies already use "account"), and (2) reconcile DOC-1 and DOC-5 from "organization" → "account".
+
+Now a final audit: confirm zero "organization" language remains anywhere across all copied docs and requests, and verify the new tickets landed intact.
+
+Done. The multi-tenant data model is now pulled over and the vocabulary is reconciled to "account" everywhere.
+
+## What I pulled (fresh IDs, as you said)
+
+| Here | Source | Title | Points |
+|------|--------|-------|--------|
+| REQ-7 | REQ-10 | **D1 schema: accounts, sites (draft + published), revisions, slug validation, 1stcontact seed** | 3 |
+| REQ-8 | REQ-11 | Site lifecycle API: publish_site, rollback_to_revision, list_revisions | 3 |
+| REQ-6 | REQ-7 | Lead-capture pipeline: D1 leads schema + Turnstile + Resend | 3 |
+
+Bodies copied byte-for-byte; stale impl fields (`commits`, `bundled_in`, `version`, `free_and_reconciled` status) dropped so they come in fresh. Planning fields (`story_points`, `priority`, `auto_merge_back`, `needs_review`) kept. **REQ-7** is the core tenancy model: `accounts` → `sites (account_id FK, slug UNIQUE, draft/published JSON)` → `revisions (site_id FK)` — exactly "one account, many sites, each carrying its own schema copy."
+
+## Vocabulary reconciliation (organization → account)
+
+The three REQs already used "account" (0 hits). The "organization" language was in the architecture docs, now fixed:
+
+- **DOC-1 (Architecture Policy):** `users, organizations, sites…` → `users, accounts, sites…`; `organization owner` → `account owner`; `tenant/organization/site IDs` → `account/site IDs`
+- **DOC-5 (Gendev Caretaker Architecture):** `- Organizations` → `- Accounts`; `Organization owner` → `Account owner`; `tenant/organization/site IDs` → `account/site IDs`
+
+Final audit confirms **0 remaining `organi*` mentions** across all copied docs and requests — the data-model tickets and the architecture docs now agree.
+
+## Two things to flag
+
+1. **Inline cross-references** in the pulled bodies (e.g. REQ-7's body says "see `[[REQ-11]]`") still use the *source* project's numbering. `[[DOC-5]]` happens to resolve correctly here; the `[[REQ-x]]` pointers reflect original planning numbers (source REQ-11 = our REQ-8). I left them verbatim to preserve the planning narrative rather than risk mis-rewrites — let me know if you'd like them remapped to the new IDs.
+2. **DOC-5 still lists both `Users` and `Accounts`** as separate D1 entities, whereas REQ-7's flat `accounts` table folds identity (`email`) into the account row. That's the simple model you approved; if you later want multiple logins per account, we'd add a `users` table then. No action needed now — just noting the doc keeps the door open.
+
+Want me to remap the inline `[[REQ-x]]` cross-references to the new IDs?
 
 <!-- xgd-chat-end -->
