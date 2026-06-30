@@ -5,9 +5,9 @@ type: request
 title: 'site-schema package: types + runtime validation for site definitions'
 created_by: xgd
 created_at: '2026-06-30T16:28:33.726322+00:00'
-updated_at: '2026-06-30T16:28:33.726322+00:00'
+updated_at: '2026-06-30T17:27:36.933706+00:00'
 completed_at: null
-last_field_updated: created_at
+last_field_updated: body
 status: draft
 fields:
   auto_merge_back: true
@@ -99,11 +99,11 @@ Runner: vitest. Files under `tests/` matching the existing convention.
 
 ## Dependencies / follow-up tickets
 
-- **Depends on**: REQ-1 (monorepo scaffold), REQ-2 (1stcontact rename).
+- **Depends on**: REQ-1 (monorepo scaffold), REQ-2 (source project) (1stcontact rename).
 - **Unblocks**:
   - REQ-4 (framework chrome modules + tokens + CSS generator) — imports types from this package.
   - REQ-5 (framework content modules) — imports types from this package.
-  - REQ-6 (`tools/generate` + site definition + wire `public-site`) — imports validator.
+  - REQ-6 (source project) (`tools/generate` + site definition + wire `public-site`) — imports validator.
 
 
 
