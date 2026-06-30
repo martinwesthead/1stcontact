@@ -5,7 +5,7 @@ type: comment
 title: Comment on chat CHAT-2
 created_by: xgd
 created_at: '2026-06-30T00:59:35.002204+00:00'
-updated_at: '2026-06-30T16:44:31.021934+00:00'
+updated_at: '2026-06-30T16:57:30.867600+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -183,5 +183,11 @@ These are two different tenancy depths: `Account = tenant` (flat) vs. `Organizat
 2. **Decide tenant depth:** flat `account` (REQ-10, simpler, matches your phrasing) vs. `organization + users` (DOC-1/DOC-5, multi-member). I'd suggest starting with `account` and adding a `users` table only when you need multiple logins per tenant.
 
 Want me to pull REQ-10 (and 11/7) over now? If so I can also reconcile the account-vs-organization naming so the data-model tickets and the architecture docs agree before any code is written.
+
+<!-- xgd-turn id="016c56d0-3083-4a93-b2a0-65ac3e0d860c-user" -->
+
+<!-- xgd-chat role="user" ts="2026-06-30T16:57:02.786Z" -->
+#### You
+I agree with your data model, please pull over the relevant tickets and shift the language from organization to account. No need to preserve ticket IDs as they come over
 
 <!-- xgd-chat-end -->
