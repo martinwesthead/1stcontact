@@ -5,9 +5,9 @@ type: request
 title: 'Framework: content modules (text-block, services-grid, contact-form)'
 created_by: xgd
 created_at: '2026-06-30T16:28:38.445470+00:00'
-updated_at: '2026-06-30T16:28:38.445470+00:00'
+updated_at: '2026-06-30T17:27:38.050719+00:00'
 completed_at: null
-last_field_updated: created_at
+last_field_updated: body
 status: draft
 fields:
   auto_merge_back: true
@@ -20,7 +20,7 @@ fields:
 
 Add the three content modules — `text-block`, `services-grid`, `contact-form` — to `packages/framework`, completing the 6-module Phase 0 catalog. Each module follows the same `moduleMeta` contract established in REQ-4; this REQ exercises markdown rendering, list-of-content fields, and a form module with progressive-enhancement client JS.
 
-The `contact-form` module submits to a configurable `action` URL but produces no backend behavior in this REQ — the real handler (D1 INSERT + email notification) ships in REQ-7. For Phase 0 the form can be deployed and exercised against a stub endpoint added in REQ-6.
+The `contact-form` module submits to a configurable `action` URL but produces no backend behavior in this REQ — the real handler (D1 INSERT + email notification) ships in REQ-6. For Phase 0 the form can be deployed and exercised against a stub endpoint added in REQ-6 (source project).
 
 Design discussion: see [[DOC-7]] (Website Framework Architecture Principles), particularly §3 (Module Contract) and §7.4 (Graceful degradation through `text-block`).
 
@@ -73,7 +73,7 @@ Catalog construction — same contract as REQ-4, applied to three more modules. 
   - On 200, replaces form with `successMessage` (rendered markdown)
   - On non-200, surfaces the response error inline; does not navigate
 - Honeypot field (`hp_<random>` style, hidden via CSS, server should reject when filled).
-- A `data-turnstile-target` element renders where the Turnstile widget will mount; the actual widget is wired in REQ-7. Module degrades cleanly without it.
+- A `data-turnstile-target` element renders where the Turnstile widget will mount; the actual widget is wired in REQ-6. Module degrades cleanly without it.
 
 ### Updates to the registry
 
@@ -82,11 +82,11 @@ Catalog construction — same contract as REQ-4, applied to three more modules. 
 
 ## Explicitly NOT in this ticket
 
-- The form endpoint (`/api/forms/contact`) — added in REQ-6 as a stub returning `{success:true}`, and made real in REQ-7.
-- D1 leads schema, INSERT, or any persistence — REQ-7.
-- Resend / email-provider integration — REQ-7.
-- Cloudflare Turnstile widget script loading and verification — REQ-7. (The module renders a mount point; the script + token submission are wired then.)
-- Any actual marketing-site content for these modules — REQ-6.
+- The form endpoint (`/api/forms/contact`) — added in REQ-6 (source project) as a stub returning `{success:true}`, and made real in REQ-6.
+- D1 leads schema, INSERT, or any persistence — REQ-6.
+- Resend / email-provider integration — REQ-6.
+- Cloudflare Turnstile widget script loading and verification — REQ-6. (The module renders a mount point; the script + token submission are wired then.)
+- Any actual marketing-site content for these modules — REQ-6 (source project).
 - Additional variants beyond those listed (e.g., `text-block` with side image, `services-grid` with image cards). Captured in the catalog evolution log if requested later (DOC-7 §7).
 
 ## Test approach (UATs)
@@ -126,5 +126,5 @@ Runner: vitest, Astro container API for component tests, JSDOM for client-side f
 
 - **Depends on**: REQ-3 (site-schema), REQ-4 (framework chrome + registry + tokens).
 - **Unblocks**:
-  - REQ-6 (`tools/generate` + site definition + wire `public-site`) — uses all 6 modules.
-  - REQ-7 (lead-capture pipeline) — replaces the form's stub endpoint with a real handler; activates Turnstile.
+  - REQ-6 (source project) (`tools/generate` + site definition + wire `public-site`) — uses all 6 modules.
+  - REQ-6 (lead-capture pipeline) — replaces the form's stub endpoint with a real handler; activates Turnstile.
