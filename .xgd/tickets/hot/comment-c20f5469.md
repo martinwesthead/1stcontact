@@ -5,7 +5,7 @@ type: comment
 title: Comment on chat CHAT-2
 created_by: xgd
 created_at: '2026-06-30T00:59:35.002204+00:00'
-updated_at: '2026-06-30T17:24:18.703692+00:00'
+updated_at: '2026-06-30T17:27:58.745902+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -239,5 +239,47 @@ Want me to remap the inline `[[REQ-x]]` cross-references to the new IDs?
 <!-- xgd-chat role="user" ts="2026-06-30T17:24:15.478Z" -->
 #### You
 yes
+
+<!-- xgd-turn id="f3974809-7f40-4f5f-b143-bf7ff68edf6c-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-06-30T17:27:58.716Z" -->
+#### Claude
+I'll remap the inline `[[REQ-x]]` cross-references. First let me find every cross-reference in the copied request bodies and build the source→new ID mapping.
+
+The cross-references are denser than just the bracketed ones, and there's a real collision hazard: source REQ-7→our REQ-6, REQ-10→7, REQ-11→8, so a bare "REQ-7" in a copied body means *source* REQ-7 (now REQ-6), not our REQ-7. Leaving those would silently mis-resolve. So I'll do a single mapping-driven pass over every REQ token (bracketed and bare) in the copied bodies, keyed on the source number:
+
+- Pulled → rewritten to new ID (1→1, 3→3, 4→4, 5→5, **7→6, 10→7, 11→8**)
+- Not pulled → de-linked; annotated "(source project)" when the number collides with a real local ticket
+
+Let me build it and show exactly what changes before committing.
+
+Good — the single-pass correctly distinguishes source-6 (annotated) from source-7 (→6). One refinement: I want the structured `[[links]]` that point to non-copied tickets (`[[REQ-9]]`, `[[REQ-12]]`) to be annotated too, not just silently de-bracketed, so a reader knows they're source-only. Let me tighten that rule and re-run the dry pass.
+
+The remap is correct. Applying the updates now.
+
+Now let me verify: no remaining `[[REQ-x]]` links that mis-resolve, and confirm the pulled-ticket links now point correctly.
+
+The cross-references now resolve correctly. Done.
+
+## Result
+
+All inline cross-references in the copied request bodies are now remapped to this project's numbering.
+
+**Bracketed `[[links]]` — now all resolve correctly to copied tickets:**
+- REQ-7 (D1 schema) → `[[REQ-8]]` (lifecycle API) ✓
+- REQ-8 (lifecycle API) → `[[REQ-7]]` (D1 schema) ✓
+
+These were the dangerous ones — in source they were `[[REQ-11]]` and `[[REQ-10]]`, which would have pointed at the wrong (or nonexistent) local tickets.
+
+**The full remap applied across REQ-3/4/5/6/7/8 bodies:**
+- **Pulled tickets** → new IDs: source `REQ-7 → REQ-6` (7 occurrences in REQ-5 alone), `REQ-10 → REQ-7`, `REQ-11 → REQ-8`; identity for 1/3/4/5.
+- **Non-copied tickets** → de-linked and annotated `REQ-N (source project)` so they can't silently resolve to an unrelated local ticket. This caught the genuine collisions: source `REQ-6` (tools/generate — *not* the same as our REQ-6 lead-capture), `REQ-2`, plus structured links `[[REQ-9]]`, `[[REQ-12]]`.
+
+**Left as-is (deliberately):**
+- Bare forward-references with no local collision (`REQ-20`, `REQ-30`) — they point at source-only future work and don't clash with any ticket here.
+- `[[DOC-x]]` links — all resolve correctly (DOC-4/5/7 came over with identical IDs).
+- `CHAT-*` / `BUG-*` mentions — design-discussion provenance from the source project; no local collisions.
+
+Verification confirms the only remaining bracketed `[[REQ-x]]` links are the two correct intra-set references.
 
 <!-- xgd-chat-end -->
