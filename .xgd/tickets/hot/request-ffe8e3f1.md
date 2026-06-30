@@ -6,9 +6,9 @@ title: 'Lead-capture pipeline: D1 leads schema + Turnstile + Resend on public-si
   form handler'
 created_by: xgd
 created_at: '2026-06-30T16:59:14.988293+00:00'
-updated_at: '2026-06-30T16:59:14.988293+00:00'
+updated_at: '2026-06-30T17:27:38.592961+00:00'
 completed_at: null
-last_field_updated: created_at
+last_field_updated: body
 status: draft
 fields:
   auto_merge_back: true
@@ -128,7 +128,7 @@ Runner: vitest with `wrangler.unstable_dev`. D1 binding uses the local sqlite em
 
 ## Dependencies / follow-up tickets
 
-- **Depends on**: REQ-3 (site-schema), REQ-4 (framework chrome), REQ-5 (contact-form module with Turnstile mount + honeypot), REQ-6 (`public-site` with stub endpoint to replace).
+- **Depends on**: REQ-3 (site-schema), REQ-4 (framework chrome), REQ-5 (contact-form module with Turnstile mount + honeypot), REQ-6 (source project) (`public-site` with stub endpoint to replace).
 - **Unblocks**:
   - CRM Lite UI on the control-app (later REQ) — `leads` table is now populated.
   - Customer-site form handling — needs per-site routing on top of the same handler shape.
