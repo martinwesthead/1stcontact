@@ -5,9 +5,9 @@ type: request
 title: 'Framework: theme tokens, CSS generator, module registry, chrome modules (header/hero/footer)'
 created_by: xgd
 created_at: '2026-06-30T16:28:36.056631+00:00'
-updated_at: '2026-06-30T16:28:36.056631+00:00'
+updated_at: '2026-06-30T17:27:37.469479+00:00'
 completed_at: null
-last_field_updated: created_at
+last_field_updated: body
 status: draft
 fields:
   auto_merge_back: true
@@ -138,7 +138,7 @@ Total: **55 tokens.**
 
 ### Module registry
 
-- `packages/framework/src/modules/registry.ts` — exports a typed registry mapping `id → { meta, Component }`. The registry is how `tools/generate` (REQ-6) discovers modules.
+- `packages/framework/src/modules/registry.ts` — exports a typed registry mapping `id → { meta, Component }`. The registry is how `tools/generate` (REQ-6 (source project)) discovers modules.
 
 - Helper `getModule(id, version)` returns the right component or throws with a clear catalog-miss error.
 
@@ -198,9 +198,9 @@ Total: **55 tokens.**
 
 - Content modules (`text-block`, `services-grid`, `contact-form`) — REQ-5.
 
-- The static generator (`tools/generate`) — REQ-6.
+- The static generator (`tools/generate`) — REQ-6 (source project).
 
-- Any actual site definition or content — REQ-6.
+- Any actual site definition or content — REQ-6 (source project).
 
 - Theme-token edits via UI or AI — control-app concern, later REQ.
 
@@ -208,7 +208,7 @@ Total: **55 tokens.**
 
 - Catalog membership validation hook into site-schema — call site separately for now; can be unified later.
 
-- A vetted Google Fonts shortlist — captured as a constant in REQ-6 alongside the marketing site content (it's a per-site choice, not a framework constant).
+- A vetted Google Fonts shortlist — captured as a constant in REQ-6 (source project) alongside the marketing site content (it's a per-site choice, not a framework constant).
 
 ## Test approach (UATs)
 
@@ -248,4 +248,4 @@ Runner: vitest. Astro components tested via `astro/container` API (renders a com
 
 - REQ-5 (content modules) — uses the same module contract and registry.
 
-- REQ-6 (`tools/generate`) — consumes the module registry and CSS generator.
+- REQ-6 (source project) (`tools/generate`) — consumes the module registry and CSS generator.
