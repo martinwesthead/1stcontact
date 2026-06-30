@@ -5,9 +5,9 @@ type: doc
 title: Architecture Policy
 created_by: xgd
 created_at: '2026-06-30T00:54:42.824137+00:00'
-updated_at: '2026-06-30T01:02:22.660707+00:00'
+updated_at: '2026-06-30T16:59:20.653421+00:00'
 completed_at: null
-last_field_updated: references
+last_field_updated: body
 status: null
 fields:
   doc_kind: architecture_policy
@@ -25,7 +25,7 @@ The GenDev Labs Website Caretaker Platform is a JAMstack-native, AI-assisted sys
 1. Host the platform primarily on Cloudflare, with external dependencies limited to AI providers, Stripe, email delivery, SMS delivery, and domain registrar services. [DOC-5]
 2. Use Cloudflare Workers as the main backend API layer for site builder, CRM, portal, form submissions, Stripe webhooks, magic-link authentication, AI orchestration, monitoring, and dynamic site endpoints. [DOC-5]
 3. Use Cloudflare Workers Static Assets to host the control application frontend, customer JAMstack websites, and preview builds. [DOC-5]
-4. Use D1 as the primary product database for all structured operational data including users, organizations, sites, pages, sections, theme tokens, leads, customers, invoices, payments, monitoring events, audit events, automation tickets, and magic-link tokens. [DOC-5]
+4. Use D1 as the primary product database for all structured operational data including users, accounts, sites, pages, sections, theme tokens, leads, customers, invoices, payments, monitoring events, audit events, automation tickets, and magic-link tokens. [DOC-5]
 5. Use R2 for blob and artifact storage including uploaded/generated images, customer assets, static build artifacts, site backups, snapshots, large content exports, and archived revision payloads. [DOC-5]
 6. Use KV only for low-criticality, globally distributed values such as public runtime config, cached site metadata, feature flags, and rate-limit metadata; KV must NOT be the source of truth for critical customer or billing data. [DOC-5]
 7. Use Durable Objects selectively for per-site or per-session coordination such as serializing builds, preventing concurrent publishes, live preview sessions, and chat session coordination — not as a general data store. [DOC-5]
@@ -46,8 +46,8 @@ The GenDev Labs Website Caretaker Platform is a JAMstack-native, AI-assisted sys
 22. Public website forms must NOT require login; lead capture must remain frictionless. [DOC-5]
 23. Handle spam on public forms via Cloudflare Turnstile, rate limiting, honeypot fields, AI spam detection, and reputation checks — never by forcing visitor account creation. [DOC-5]
 24. Provide magic-link-based lead access (post-submission "Manage this inquiry" link) and customer portal access via owner-initiated invitation links. [DOC-5]
-25. Support scoped magic-link permissions including organization owner, site admin, business staff, lead record access, customer portal access, and GenDev Labs admin. [DOC-5]
-26. Apply PII privacy principles: collect only necessary data, attach tenant/organization/site IDs to all customer records, avoid storing payment card data, use provider-managed email/SMS, provide export and deletion capabilities early, maintain audit events, and disclose when data is sent to AI providers. [DOC-5]
+25. Support scoped magic-link permissions including account owner, site admin, business staff, lead record access, customer portal access, and GenDev Labs admin. [DOC-5]
+26. Apply PII privacy principles: collect only necessary data, attach account/site IDs to all customer records, avoid storing payment card data, use provider-managed email/SMS, provide export and deletion capabilities early, maintain audit events, and disclose when data is sent to AI providers. [DOC-5]
 27. Treat the customer portal as trust architecture providing data viewing, deletion, export, invoice/payment access, subscription management, monitoring transparency, AI activity transparency, and site change rollback. [DOC-5]
 28. Implement basic monitoring covering site availability, SSL validity, DNS health, contact form testing, lead capture verification, broken links, missing assets, basic SEO, sitemap/robots.txt, metadata presence, and static build/deploy status; failures must create internal events or automation tickets. [DOC-5]
 29. Constrain AI to translating user intent into structured changes (theme tokens, section reordering, content blocks, predefined form components) rather than rewriting arbitrary site code, to bound cost, risk, and validation complexity. [DOC-5]
