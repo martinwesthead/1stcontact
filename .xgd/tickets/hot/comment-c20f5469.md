@@ -5,7 +5,7 @@ type: comment
 title: Comment on chat CHAT-2
 created_by: xgd
 created_at: '2026-06-30T00:59:35.002204+00:00'
-updated_at: '2026-06-30T16:42:52.859246+00:00'
+updated_at: '2026-06-30T16:44:31.021934+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -124,5 +124,64 @@ No code touched — pure ticket/API operations (auto-committed). Want REQ-6+ or 
 <!-- xgd-chat role="user" ts="2026-06-30T16:42:48.857Z" -->
 #### You
 ok so critically as we construct the data model, I need us to take into account multi-site and multi-tenant. One tenant (account) can have multiple sites. Each site can have a copy of the schema defined. Does this spec support those?
+
+<!-- xgd-turn id="855425a9-3314-42ac-ac1f-b8b7a2a09e15-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-06-30T16:44:30.989Z" -->
+#### Claude
+I'll review the actual spec content to answer this properly. The data model is most relevant in REQ-3 (site-schema) and REQ-1 (monorepo/Workers), plus DOC-1 (Architecture Policy). Let me read them.
+
+Now the key one — REQ-3 (site-schema, the data model):
+
+Let me check whether multi-tenancy/account concepts appear anywhere in the copied planning docs.
+
+Multi-tenancy is heavily discussed in the source's chats/docs (72 "tenant" mentions), but I need to check whether it made it into **the actual data-model spec** vs. just discussion. Let me look at the tenancy context in the source docs.
+
+DOC-1 and DOC-5 contain the actual tenancy model. Let me read DOC-5's data-model/hierarchy section.
+
+Let me quickly confirm whether the source ever turned the tenant/sites D1 tables into a concrete REQ spec (vs. only architecture docs).
+
+Found the key gap. Let me read **REQ-10** from source — that's the actual tenancy data-model spec, and it's *not* one of the four we pulled.
+
+Now I have the full picture. Here's the honest answer.
+
+## Short answer
+
+**Partially.** The spec you pulled (REQ-3) does **not** model multi-tenancy — but the source project *did* spec it, in a ticket we haven't copied yet: **REQ-10**. The architecture vision (DOC-1, DOC-5) also assumes multi-tenancy throughout.
+
+## Where each piece lives
+
+**REQ-3 (`site-schema`) — what you have:** This defines only the *shape of a single site's content definition* (`Site` → pages → modules → theme tokens). `Site` is the top-level object. There is **no** `Account`/`Tenant` entity, no `accountId` on a site, and no ownership relationship. It's deliberately a content contract, not a storage/tenancy model — it even explicitly defers "the D1 `site_definitions` table" to a later ticket.
+
+So REQ-3 is *multi-site-compatible by design* (each site carries its own complete, self-contained definition — exactly your "each site can have a copy of the schema defined"), but it is **not, by itself, multi-tenant**.
+
+**REQ-10 (NOT yet copied) — the actual tenancy model:** This is the piece you're asking about. It specs precisely your requirement — *"per-account multi-site"*:
+
+```
+accounts (id, email, plan_tier, …)
+sites    (id, account_id → accounts.id, slug UNIQUE, draft_definition, published_definition, …)
+revisions(id, site_id → sites.id, definition, …)
+```
+
+- One account → many sites via `sites.account_id` FK (`idx_sites_account_id`).
+- Each site stores its own full schema definition (`draft_definition` / `published_definition` JSON columns) — your "copy of the schema per site."
+- Global `slug` namespace + reserved-slug list + revision history per site.
+
+**DOC-1 / DOC-5 — the vision:** Both already assume the tenant hierarchy: *Organizations → Users → Sites → Pages → Sections* in D1 as primary DB, `site_revisions` keyed by `site_id`, and scoped roles (org owner, site admin). DOC-1 #26 even mandates "attach tenant/organization/site IDs to all customer records."
+
+## The one wrinkle to flag
+
+There's a vocabulary mismatch worth resolving now:
+- **DOC-1/DOC-5** use **Organization** (with Users beneath it) as the tenant.
+- **REQ-10** uses **Account** (`accounts.email`, one identity) as the tenant, with no separate users/org table.
+
+These are two different tenancy depths: `Account = tenant` (flat) vs. `Organization → Users → Sites` (org with multiple members). REQ-10's flat `account` is simpler and matches "one tenant (account) can have multiple sites." The org-with-members model is richer. We should pick one before building, or the schema and docs will drift.
+
+## Recommendation
+
+1. **Pull over REQ-10** (and likely **REQ-11** "Site lifecycle API: publish/rollback/list_revisions" and **REQ-7** "leads schema") — that's where your multi-tenant data model actually lives.
+2. **Decide tenant depth:** flat `account` (REQ-10, simpler, matches your phrasing) vs. `organization + users` (DOC-1/DOC-5, multi-member). I'd suggest starting with `account` and adding a `users` table only when you need multiple logins per tenant.
+
+Want me to pull REQ-10 (and 11/7) over now? If so I can also reconcile the account-vs-organization naming so the data-model tickets and the architecture docs agree before any code is written.
 
 <!-- xgd-chat-end -->
