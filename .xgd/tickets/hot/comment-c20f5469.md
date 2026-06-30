@@ -5,7 +5,7 @@ type: comment
 title: Comment on chat CHAT-2
 created_by: xgd
 created_at: '2026-06-30T00:59:35.002204+00:00'
-updated_at: '2026-06-30T16:28:56.369556+00:00'
+updated_at: '2026-06-30T16:42:52.859246+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -118,5 +118,11 @@ Done. All four requirements copied with IDs aligned to the source and bodies byt
 - **IDs preserved exactly** (REQ-1, 3, 4, 5). To do that I reused an earlier probe ticket as REQ-1 and parked an **archived placeholder at REQ-2**, mirroring your intentional skip. Source REQ-2 was only a project-specific identifier rename ("first-contact → 1stcontact"), so skipping it was correct.
 
 No code touched — pure ticket/API operations (auto-committed). Want REQ-6+ or any of the other request tickets next?
+
+<!-- xgd-turn id="855425a9-3314-42ac-ac1f-b8b7a2a09e15-user" -->
+
+<!-- xgd-chat role="user" ts="2026-06-30T16:42:48.857Z" -->
+#### You
+ok so critically as we construct the data model, I need us to take into account multi-site and multi-tenant. One tenant (account) can have multiple sites. Each site can have a copy of the schema defined. Does this spec support those?
 
 <!-- xgd-chat-end -->
