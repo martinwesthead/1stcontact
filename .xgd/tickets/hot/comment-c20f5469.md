@@ -5,7 +5,7 @@ type: comment
 title: Comment on chat CHAT-2
 created_by: xgd
 created_at: '2026-06-30T00:59:35.002204+00:00'
-updated_at: '2026-06-30T17:27:58.745902+00:00'
+updated_at: '2026-06-30T17:30:57.871682+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -281,5 +281,11 @@ These were the dangerous ones — in source they were `[[REQ-11]]` and `[[REQ-10
 - `CHAT-*` / `BUG-*` mentions — design-discussion provenance from the source project; no local collisions.
 
 Verification confirms the only remaining bracketed `[[REQ-x]]` links are the two correct intra-set references.
+
+<!-- xgd-turn id="3e6109fd-d1ce-4f71-aa9d-b925a58773c9-user" -->
+
+<!-- xgd-chat role="user" ts="2026-06-30T17:29:32.640Z" -->
+#### You
+Why do we need REQ-6? I was not expecting to start work on leads yet or REQ-8 I think both of those are getting ahead of what I currently want to build - please don't get over excited pulling tickets
 
 <!-- xgd-chat-end -->
