@@ -5,9 +5,9 @@ type: request
 title: 'Site lifecycle API: publish_site, rollback_to_revision, list_revisions'
 created_by: xgd
 created_at: '2026-06-30T16:59:20.155276+00:00'
-updated_at: '2026-06-30T16:59:20.155276+00:00'
+updated_at: '2026-06-30T17:27:39.621637+00:00'
 completed_at: null
-last_field_updated: created_at
+last_field_updated: body
 status: draft
 fields:
   priority: medium
@@ -18,7 +18,7 @@ fields:
 
 ## Scope
 
-Implement the **site lifecycle actions** as Operator API endpoints: `publish_site`, `rollback_to_revision`, `list_revisions`. These are the first Category 2 (system action) entries in the `OPERATOR_ACTIONS` registry from [[REQ-9]], and the first endpoints in the platform that have side effects beyond the in-memory draft (D1 writes, revision snapshots, build triggers).
+Implement the **site lifecycle actions** as Operator API endpoints: `publish_site`, `rollback_to_revision`, `list_revisions`. These are the first Category 2 (system action) entries in the `OPERATOR_ACTIONS` registry from REQ-9 (source project), and the first endpoints in the platform that have side effects beyond the in-memory draft (D1 writes, revision snapshots, build triggers).
 
 After this REQ: an authorized (paid-plan) operator — either via UI affordance (REQ-12) or via AI tool call — can publish the current draft, roll back to a prior revision, and view the revision history. Trial-plan operators see no publish/rollback tools and receive 403 on direct API calls.
 
@@ -30,9 +30,9 @@ First non-trivial application of the Operator API foundation. Three closely-coup
 
 ## Dependencies
 
-- [[REQ-9]] — Operator API foundation, `OPERATOR_ACTIONS` registry, plan-tier middleware, SSE event registry.
-- [[REQ-10]] — D1 schema: `sites`, `revisions`, accounts/plan_tier.
-- [[REQ-6]] — `tools/generate` invocable from the Worker context (for the publish build step).
+- REQ-9 (source project) — Operator API foundation, `OPERATOR_ACTIONS` registry, plan-tier middleware, SSE event registry.
+- [[REQ-7]] — D1 schema: `sites`, `revisions`, accounts/plan_tier.
+- REQ-6 (source project) — `tools/generate` invocable from the Worker context (for the publish build step).
 - Magic-link auth — recommended prerequisite; if not landed, this REQ ships with the trial-plan stub from REQ-9 and the action handlers return 403 in all real sessions. UATs use a paid-plan test session via header override.
 
 ## Deliverables
