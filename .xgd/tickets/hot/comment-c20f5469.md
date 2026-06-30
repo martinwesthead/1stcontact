@@ -5,7 +5,7 @@ type: comment
 title: Comment on chat CHAT-2
 created_by: xgd
 created_at: '2026-06-30T00:59:35.002204+00:00'
-updated_at: '2026-06-30T01:02:39.665305+00:00'
+updated_at: '2026-06-30T16:26:36.987244+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -76,5 +76,11 @@ Done. All planning DOC tickets have been copied from `../first-contact` into thi
 - **`references` fields** were remapped by title to the new IDs. One reference in DOC-11 pointed to `CHAT-15` ("Mobile app technology"), which wasn't a DOC ticket and wasn't copied — I preserved its title with a note rather than leave a dangling ID.
 
 All changes went through the `xgd ticket` API (auto-committed); no code was touched, so no free-coding ticket was needed. Want me to copy any non-DOC planning tickets (epics, the CHAT-15 mobile-app discussion, etc.) too?
+
+<!-- xgd-turn id="3fffb546-fed4-4f82-87d7-7239a5fb7305-user" -->
+
+<!-- xgd-chat role="user" ts="2026-06-30T16:26:33.315Z" -->
+#### You
+Next please pull over REQ-1, REQ-3, REQ-4 and REQ-5
 
 <!-- xgd-chat-end -->
