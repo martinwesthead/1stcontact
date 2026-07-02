@@ -5,9 +5,9 @@ type: request
 title: 'Framework: content modules (text-block, services-grid, contact-form)'
 created_by: xgd
 created_at: '2026-06-30T16:28:38.445470+00:00'
-updated_at: '2026-06-30T22:40:31.437161+00:00'
+updated_at: '2026-07-02T02:03:47.240665+00:00'
 completed_at: null
-last_field_updated: status
+last_field_updated: commits
 status: bundled
 fields:
   auto_merge_back: true
@@ -15,7 +15,7 @@ fields:
   priority: medium
   story_points: 4
   commits:
-  - 68f4e252163bcbca72ba6b659eefb8653628f53b
+  - 0b363818f895fa81501b1ed7570a7a5430ab0ead
   version: 0.0.4
   bundled_in: bundle-6a071846
 ---

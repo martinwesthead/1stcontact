@@ -5,9 +5,9 @@ type: request
 title: 'Framework: theme tokens, CSS generator, module registry, chrome modules (header/hero/footer)'
 created_by: xgd
 created_at: '2026-06-30T16:28:36.056631+00:00'
-updated_at: '2026-06-30T22:40:31.369607+00:00'
+updated_at: '2026-07-02T02:03:47.071784+00:00'
 completed_at: null
-last_field_updated: status
+last_field_updated: commits
 status: bundled
 fields:
   auto_merge_back: true
@@ -15,7 +15,7 @@ fields:
   priority: medium
   story_points: 5
   commits:
-  - 7d0ac1c769fb7e40c62d6d2a9f6b93942b88b4ef
+  - 4a8a4888e2f8c86dc05b3710eea39de3eb5e92ac
   version: 0.0.3
   bundled_in: bundle-6a071846
 ---

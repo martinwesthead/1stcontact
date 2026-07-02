@@ -6,9 +6,9 @@ title: 'Toolchain upgrade: latest stable Astro 7 / Vite 8 / Vitest 4 / Wrangler 
   / Zod 4 / TypeScript 6'
 created_by: xgd
 created_at: '2026-06-30T20:55:32.795492+00:00'
-updated_at: '2026-06-30T22:40:31.508606+00:00'
+updated_at: '2026-07-02T02:03:47.517561+00:00'
 completed_at: null
-last_field_updated: status
+last_field_updated: commits
 status: bundled
 fields:
   priority: high
@@ -16,8 +16,8 @@ fields:
   auto_merge_back: true
   needs_review: false
   commits:
-  - b8fbc83be2e28c5af14084c403a752c00863f2d0
-  - 1a3ab8cdcb5b915432d3a952eeda0e2d0df20c03
+  - c88930b794bbcd4fa2a1c25e5953e12e1339d7f3
+  - 752a9d5230201f3687598b7d1e27185a208e7a22
   version: 0.0.5
   bundled_in: bundle-6a071846
 ---

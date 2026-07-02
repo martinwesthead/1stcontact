@@ -5,7 +5,7 @@ type: doc
 title: Website Framework Architecture Principles
 created_by: xgd
 created_at: '2026-06-30T01:01:58.435922+00:00'
-updated_at: '2026-06-30T20:22:47.543584+00:00'
+updated_at: '2026-07-01T23:47:53.571335+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -24,11 +24,11 @@ It is paired with [[DOC-4]] (product vision) and [[DOC-5]] (platform architectur
 **This document commits to:**
 
 - A module-based composition model.
-- A strictly structured-change discipline: AI edits site definitions as data, never as code or CSS.
-- A finite, evolving catalog of modules with bounded per-instance flexibility.
+- An evolving, **expressively-complete structured design language** — a growing set of modules and layout primitives powerful enough that output looks bespoke, never templated. Expressiveness grows without limit; the only walls are **security** and **reliability**, never taste.
+- AI edits site definitions as **structured data** — positions, layers, and layout included — never as raw code, CSS, or HTML. That boundary is for security and reproducibility, not to constrain design.
 - One framework, one site model: the 1st Contact marketing site is an ordinary platform site, not a special case. File-backed (`sites/<name>/` — offline development and seed fixtures) and D1-backed are two storage representations of the same site, not two kinds of site; file-backed sites are migrated into the D1-backed canonical store.
 - One **server-side** renderer: static generation at build time / via the `1c` CLI. No client-side/in-browser renderer (see §2.4).
-- A single mechanical validator that enforces the structured-edit discipline at every layer.
+- A single mechanical validator that enforces **structure, security, and referential integrity** at every layer — not aesthetic conformance. Quality comes from the AI's eyes and iteration (§6), not from constraints.
 - Astro as the rendering technology; Astro + React for the control app.
 
 **This document deliberately does not commit to:**
@@ -118,11 +118,11 @@ export const moduleMeta = {
 
 ### 3.2 Contract rules
 
-1. **All variants and dials are finite enumerations.** Free-form strings, numbers, or objects are forbidden for visual properties.
+1. **Visual properties are structured data, not raw CSS.** Where an enumerated set fits (a surface, a variant), dials use it; where a design needs free values (positions, coordinates, sizes, z-order, transforms), those are **free-valued structured fields**, validated for type and range. What is forbidden is raw CSS/HTML — not free values.
 2. **Content is structured.** Every content field has a typed schema entry (`string`, `markdown`, `asset-ref`, `url`, `enum`, `list-of<T>`).
 3. **Modules are pure functions of their props.** Modules never read site-wide state outside what is passed in.
-4. **CSS is scoped, class-based, no inline styles.** Visual tunables flow through CSS custom properties set by the theme + class names derived from variant and dial values.
-5. **No per-instance style overrides.** A module instance cannot carry custom CSS or arbitrary style props.
+4. **Instance data becomes CSS only through the module, never by injection.** Variant / dial / position / layout props flow into scoped, class-based styling and CSS custom properties the module controls — never raw inline CSS supplied by the instance.
+5. **No raw per-instance CSS/HTML.** An instance may carry **structured** layout (position, size, z-order, treatment) that the module interprets; it may not carry custom CSS or arbitrary style/markup. Structured layout is fine — raw code is the security/reproducibility line.
 6. **Same render in both storage representations.** A module produces identical output regardless of whether its props came from a file or D1.
 
 ### 3.3 Module identity and stability
@@ -175,44 +175,38 @@ The phased delivery order is `in-page-anchors` and `top-tabs` first (sufficient 
 
 ---
 
-## 6. Structured Changes Only
+## 6. A Powerful Structured Language, Not a Box
 
-### 6.1 The discipline
+### 6.1 Philosophy — the enemy is "Bad Wix"
 
-AI modifies site definitions as **structured data** — JSON edits to the site config, page composition, module instances, and theme tokens. AI does not write code, CSS, HTML, or unstructured strings outside content fields.
+The failure mode to avoid is **Bad Wix**: all the constraints of a template builder, none of the human design input. Wix traps a *human* in rigid templates so their taste cannot get out; trapping a far more capable AI in finite dials repeats that failure with something powerful wasted inside the box.
 
-### 6.2 What AI is allowed to edit
+Our stance is the inverse: **hand the AI a powerful structured design language and let it out.** Our sites should *look like they have no templates* — not because there is no template, but because the template is a **language, not a layout**, expressive enough that its output reads as bespoke.
 
-- Site config values (e.g., business name, contact email).
-- Page composition (add, remove, reorder pages and module instances).
-- Module variant selection (within the module's declared variants).
-- Module dial values (within the module's declared dial enumerations).
-- Module content (within the module's declared content schema).
-- Site-wide theme token values (within the token contract).
-- Navigation pattern, entries, and labels.
-- Asset references (uploading new assets, attaching to module instances).
+This flips the burden of proof on every constraint: a constraint must justify itself by **security** or **reliability**. "It might look mediocre" is **not** a valid reason to remove a capability — that is what the AI's judgment, its eyes, and iteration are for (§6.4). Any rule whose only job is taste-policing is deleted.
 
-### 6.3 What AI is forbidden to do
+### 6.2 The only wall: structured, not raw code
 
-- Write or edit any framework code, including module source files.
-- Write or edit CSS — neither global, per-site, nor per-instance.
-- Add free-form visual properties outside the dial and token contracts.
-- Bypass content schemas with raw HTML in content fields.
-- Introduce new module types or variants without going through framework iteration.
+There is exactly one hard boundary: definitions are edited as **structured data — never as raw code, CSS, or HTML.** Free positioning, layering / compositing, transforms, backgrounds, motion are all welcome **as structured fields**. Raw CSS/HTML is not — and that line serves concrete, non-aesthetic goals:
 
-### 6.4 Escape hatch policy
+- **Security** — raw CSS/HTML in instance data is an injection / XSS surface; structured-only closes it.
+- **Reproducibility & portability** — structured properties round-trip through capture ([[DOC-13]]), serialize to D1, and re-render deterministically; raw CSS does not.
 
-A per-instance custom CSS escape hatch is **not implemented in v1**. If introduced later it MUST be:
+So "structured" is not the box — a *small* vocabulary would be. The commitment is to an **expressively-complete, ever-growing** one.
 
-- **Operator-only** — accessible only to the platform operator, never to AI or end users.
-- **Per-instance scoped** — never global, never inheritable across instances.
-- **Logged as drift** — tracked centrally; repeated overrides of the same kind signal a missing variant in the catalog and trigger a framework iteration.
+### 6.3 Grow the language; never fall back to raw
 
-The intent is to keep the door closed by default and visible when opened.
+When the language cannot yet express a design, the answer is to **add a primitive** — a treatment, a transform, a gradient, a layer, a motion — **not** to open a raw-CSS escape hatch. Every real site we capture ([[DOC-13]]) that we cannot reproduce is a **language gap to close**, prioritized by how often it appears — not a "sorry, out of scope." The expressive ceiling rises without limit; the security/reproducibility wall stays put.
+
+This supersedes the earlier "finite dials as AI-safety" model and the operator-only custom-CSS escape hatch — neither is how quality or safety is achieved here.
+
+### 6.4 Quality comes from eyes, not constraints
+
+Finite dials were the old guardrail against chaos. Removing them, the mechanism that replaces them is **the AI's eyes**: it renders its own output, sees it (screenshots — [[DOC-13]] §6), and iterates, with human review as the backstop. This is why the capture / screenshot capability is **foundational, not peripheral** — without eyes you need constraints; with eyes you can hand the AI the full language. The guardrails that remain are **security** (§6.2) and **reliability** (browser / render robustness), enforced structurally, not by narrowing design.
 
 ### 6.5 Mechanical validation contract
 
-The discipline in §6.1–§6.3 is enforced mechanically by a single validator owned by `packages/site-schema`:
+The **structural and security** boundaries of §6.2 are enforced mechanically by a single validator owned by `packages/site-schema` — it enforces well-formedness and safety, **not** aesthetic conformance:
 
 ```
 validate(siteDefinition, frameworkCatalog) → Result
@@ -223,7 +217,7 @@ The validator is **deterministic, synchronous, and fast** — runs in well under
 What it checks:
 
 1. **Schema conformance** — the site definition matches the published JSON schema: required fields present, types correct, no unknown keys.
-2. **Module-meta conformance** — every module instance's `type` exists in the catalog at the pinned `version`; `variant` is in `moduleMeta.variants`; every dial value is in `moduleMeta.dials[name]`; content fields match `moduleMeta.contentSchema`.
+2. **Module-meta conformance** — every module instance's `type` exists in the catalog at the pinned `version`; `variant` is in `moduleMeta.variants`; enumerated dial values are in `moduleMeta.dials[name]` and free-valued structured props (positions, sizes, z-order) pass type/range checks; content fields match `moduleMeta.contentSchema`.
 3. **Theme-token conformance** — every set token name exists in the framework's contract; values pass type checks for their token kind (color, scale step, breakpoint, etc.).
 4. **Referential integrity** — every `asset-ref` resolves; every nav entry's target page or anchor exists; module IDs referenced from nav exist.
 5. **Uniqueness and structure** — module IDs unique within a page; page slugs unique within a site; nav entries non-circular.
@@ -254,6 +248,8 @@ The validator is consumed at **four layers**, every layer using the same code an
 ---
 
 ## 7. Catalog Evolution
+
+The catalog grows through a **two-tier composition model**: Tier A composes sites from the reusable library (structured config); Tier B authors a **bespoke module** (code, with structured params) when the library cannot express a design. The module is a *structured escape valve to arbitrary code* — which is why the framework has **no expressive ceiling** (template builders have no code escape). Bespoke modules are drafted in-session (1C), **hardened by XGD** (tests, security, generalization), and either kept site-local or promoted to the library by demand. Full model: [[DOC-14]] (Module Lifecycle & Two-Tier Composition).
 
 ### 7.1 Customer-driven, framework-bound
 

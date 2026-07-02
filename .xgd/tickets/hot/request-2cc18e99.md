@@ -5,9 +5,9 @@ type: request
 title: 'site-schema package: types + runtime validation for site definitions'
 created_by: xgd
 created_at: '2026-06-30T16:28:33.726322+00:00'
-updated_at: '2026-06-30T22:40:31.303672+00:00'
+updated_at: '2026-07-02T02:03:46.902209+00:00'
 completed_at: null
-last_field_updated: status
+last_field_updated: commits
 status: bundled
 fields:
   auto_merge_back: true
@@ -15,7 +15,7 @@ fields:
   priority: medium
   story_points: 2
   commits:
-  - 682cce2ddd81c8956f5c06701f3cb34c613b795c
+  - 7f2f186f1b518db71aafcb6c7605dbf4d9d43e5a
   version: 0.0.2
   bundled_in: bundle-6a071846
 ---
@@ -141,3 +141,6 @@ All slots are required (per ticket: missing slot rejected).
 - Structural validations (module ID uniqueness within page; page slug uniqueness within site) are in the schema per DOC-7 §6.5 layer 1. Catalog membership (is `'hero'` a real module type?) is NOT — that's the framework's job at render time.
 
 -
+
+## Model note (2026-07-01)
+> Per the [[DOC-7]] §6 philosophy update, the schema is expected to gain **free-valued structured layout** — position (`x`/`y`/`z`), size, per-breakpoint overrides, a `Background` type, and layer/compositing — delivered by the `layer` module REQ. These are structured data (not raw CSS); site-schema stays the validator. No change to REQ-3's delivered scope.

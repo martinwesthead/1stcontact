@@ -6,7 +6,7 @@ title: '1c structured-edit commands: validated page/config/asset CRUD + get + st
   (AI tool surface)'
 created_by: xgd
 created_at: '2026-06-30T21:22:22.178162+00:00'
-updated_at: '2026-06-30T23:43:25.982405+00:00'
+updated_at: '2026-07-02T00:19:10.068226+00:00'
 completed_at: null
 last_field_updated: body
 status: free_coded
@@ -24,7 +24,7 @@ fields:
 
 Add the **structured-edit command surface** to the `1c` CLI: validated, AI-legible commands to read and mutate a site's **draft** — pages, config/metadata, and assets — plus `1c status`. These are the file-based precursor to the future AI builder tool surface; they are **designed to be driven by an AI**, so machine-readable output and **clear, actionable failure messages** are first-class requirements, not afterthoughts.
 
-Design discussion: see [[DOC-12]] (storage/versioning/rendering model) and [[DOC-7]] §6 (structured changes only).
+Design discussion: see [[DOC-12]] (storage/versioning/rendering model) and [[DOC-7]] §6 (powerful structured language).
 
 ## Why free-coded
 

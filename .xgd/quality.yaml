@@ -15,7 +15,7 @@ suites:
     - packages/framework/src
     - packages/site-schema/src
     test_dirs:
-    - ai.gendevlabs.swift_xctest_open
+    - tests
     per_test_timeout_seconds: 30
     lint:
       tools:

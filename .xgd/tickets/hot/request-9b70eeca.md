@@ -6,7 +6,7 @@ title: 'D1 schema: accounts, sites (draft + published), revisions, slug validati
   1stcontact seed'
 created_by: xgd
 created_at: '2026-06-30T16:59:17.587362+00:00'
-updated_at: '2026-06-30T20:22:13.657278+00:00'
+updated_at: '2026-07-02T00:19:11.164600+00:00'
 completed_at: null
 last_field_updated: body
 status: draft
@@ -172,3 +172,6 @@ Landed as specified above. Notes for downstream REQs:
 - **`SITES_DB` binding name** used in the test helper; wrangler.toml currently binds `LEADS_DB`. The API REQ (REQ-11 (source project)) will add the new D1 binding to wrangler.toml — this REQ does not modify wrangler config.
 
 UATs (8 files, 53 tests) all pass. The two failing tests in the broader suite (REQ-30 (source project) and BUG-5 doc-drift guards) are pre-existing on `main` and unrelated.
+
+## Model note (2026-07-01)
+> Per [[DOC-14]], the D1 model must also: store **site-local / draft modules** (bespoke-module artifacts) and **gate publish on module hardening** (a site cannot publish while depending on an unhardened bespoke module). Fold into this ticket's reconciliation before implementation.

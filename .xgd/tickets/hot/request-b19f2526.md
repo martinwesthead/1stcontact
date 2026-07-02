@@ -5,9 +5,9 @@ type: request
 title: '1c CLI: file-backed site storage, versioning, and server-side render pipeline'
 created_by: xgd
 created_at: '2026-06-30T20:25:46.923728+00:00'
-updated_at: '2026-06-30T22:42:02.026921+00:00'
+updated_at: '2026-07-02T00:19:11.713366+00:00'
 completed_at: null
-last_field_updated: story_points
+last_field_updated: body
 status: free_coded
 fields:
   story_points: 8
@@ -129,3 +129,6 @@ to be filed as its own ticket, not bundled into REQ-9's reconciliation.
 UATs are exercised programmatically under vitest (where the `.astro` transform is
 wired via `getViteConfig`), consistent with the existing framework UATs; the `1c`
 binary dispatches the same command handlers.
+
+## Model note (2026-07-01)
+> Per [[DOC-14]], `1c render` will need to resolve **site-local / draft modules**, not just the shared framework library — a small module-resolution extension, delivered by the bespoke-module lifecycle REQ.
