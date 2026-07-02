@@ -5,7 +5,7 @@ type: comment
 title: Comment on chat CHAT-2
 created_by: xgd
 created_at: '2026-06-30T00:59:35.002204+00:00'
-updated_at: '2026-07-02T01:45:00.318406+00:00'
+updated_at: '2026-07-02T16:57:40.189702+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -3487,5 +3487,180 @@ The build-to-learn value doesn't disappear — it *shifts*. It moves from "what 
 So: **not build-first-to-learn for these two — we've learned the primitives already. Create/implement REQ-14/15/16, then build the sites.** 
 
 Want me to start REQ-14 (background/overlay) now? And shall I archive the REQ-20/REQ-21 duplicate while we're here?
+
+<!-- xgd-turn id="32627fc6-656a-4095-875f-e802641042bf-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T15:56:29.664Z" -->
+#### You
+When we download a site for analysis where is the content stored?
+
+<!-- xgd-turn id="32627fc6-656a-4095-875f-e802641042bf-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T15:57:32.211Z" -->
+#### Claude
+Good question — and since REQ-12 just landed, let me check the *actual* implementation, not just the spec (they can differ, and this touches the IP/gitignore concern).
+
+Checked the actual REQ-12 implementation — it matches the spec faithfully. Here's where captured content lands.
+
+## Location: `references/<host>/<path>/`
+
+When `1c capture page <url>` downloads a site for analysis, it writes a **self-contained bundle** per captured URL to `references/<host>/<path>/` (confirmed in `tools/generate/src/cli/capture/capture.ts` + `bundle.ts`). Each bundle contains:
+
+| File | What it is |
+|---|---|
+| `capture.json` | the **structured essence** — the AI's primary input (theme tokens, style-scope sections, verbatim content, asset manifest) |
+| `screenshot.full.png` | full-page screenshot — the **eyes** |
+| `rendered.html` | post-JS DOM — the AI's **escape hatch** |
+| `raw.html` | original server response |
+| `assets/` | mirrored bytes (images, fonts, CSS) |
+
+## It's gitignored — third-party content is never committed
+
+`git check-ignore` confirms `references/` is ignored (the REQ-12 implementation added it to `.gitignore` alongside `/dist/` and `/sandbox/`). This is the IP stance from DOC-15 §6 enforced in code: **captured sites are internal, transformative capability material — not committed, not redistributed.**
+
+There's no `references/` dir yet — nothing's been captured. It appears on the first `1c capture`.
+
+## The full storage map (four trees)
+
+So the repo now has four parallel trees, cleanly separated:
+
+- **`sites/`** — *our* authored sites — **tracked** (git)
+- **`sandbox/`** — scratch sites — gitignored
+- **`dist/`** — rendered output — gitignored
+- **`references/`** — captured *external* sites for analysis — gitignored
+
+One nice property the implementation kept: the bundle is **self-contained** (`rendered.html` + mirrored assets), so `1c capture`'s re-extract path (`reextract.ts`) can re-derive `capture.json` offline from the cached bytes without re-hitting the live site — the "capture once, re-extract forever" property from DOC-13.
+
+So for recreating faelan.com / gigabytealchemy.ai: capturing them lands their bundles under `references/faelan.com/` and `references/gigabytealchemy.ai/` (gitignored), and we author *our* reproductions under `sites/` (tracked) from what those bundles tell us. Want me to run a real capture of one of them now that REQ-12 is live?
+
+<!-- xgd-turn id="2387c992-d62d-461e-aec4-6da7462ea11c-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T16:27:36.012Z" -->
+#### You
+Do you think these 4 directories should be collected together, say under storage/ it feels messy to have them flailing around at the top level
+
+<!-- xgd-turn id="2387c992-d62d-461e-aec4-6da7462ea11c-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T16:29:18.091Z" -->
+#### Claude
+Yes — the instinct is right. Three of the four (`dist/`, `sandbox/`, `references/`) are gitignored generated/external noise, and having them flail at the top level next to `apps/`, `packages/`, `tools/` muddies the "what is this repo" read.
+
+## My recommendation: `storage/` for all four
+
+I'd do exactly what you proposed, because it produces the cleanest top-level mental model — a **code / data** split:
+
+```
+apps/  packages/  tools/  db/  tests/     ← code
+storage/                                   ← all site data
+  sites/         (tracked)
+  sandbox/       (gitignored)
+  dist/          (gitignored)
+  references/    (gitignored)
+```
+
+`.gitignore` then carries the tracked-vs-ignored distinction cleanly — `storage/sites/` tracked, `storage/{sandbox,dist,references}/` ignored — instead of three separate top-level ignore entries. Top level goes from "6 dirs + 3 ignored stragglers" to "code dirs + one `storage/`." Much tidier.
+
+(`storage/` is a fine name; `data/` or `workspace/` would read equally well. One alternative worth mentioning: keep `sites/` at top level since it's the *tracked source of truth* and fold only the three ignored ones under a single ignored parent like `.work/`. That favors making the source prominent over uniformity. I slightly prefer the all-under-`storage/` version for the clean code/data separation — but either is defensible.)
+
+## The cost is small — and now is the right time
+
+It's a real but tiny refactor, touching:
+- **CLI path constants** (REQ-9/12) — the roots for sites/sandbox/dist/references and `references/<host>/`. Almost certainly centralized, so a few lines.
+- **`.gitignore`** — retarget the three ignores under `storage/`.
+- **Docs** — the layout in DOC-12/13/15.
+- **`git mv sites storage/sites`** (+ `dist`) to preserve history; sandbox/references don't exist yet.
+
+And timing matters: **we're about to author the two flagship sites *and* capture faelan/gigabytealchemy into `references/`.** Restructuring *now*, before content accumulates, is nearly free; doing it later means moving live data. So I'd settle the layout before we start building.
+
+It is a change to shipped code (REQ-9/12), so it wants a scoped ticket — but per your "each ticket is a few mins," it's a quick one.
+
+Want me to scope it (a small "consolidate site data under `storage/`" REQ) and do it now, before we start on REQ-14 and the sites? I'd fold the doc updates into the same change.
+
+<!-- xgd-turn id="b97730c9-28f7-4eca-898c-9e0c046c82e0-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T16:34:14.353Z" -->
+#### You
+yes please
+
+<!-- xgd-turn id="b97730c9-28f7-4eca-898c-9e0c046c82e0-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T16:45:45.618Z" -->
+#### Claude
+On it. Free-coding: I'll scope a ticket, then implement. First let me find exactly where the path roots are defined so the ticket and the change are accurate.
+
+Clean — there's a central `store/paths.ts` module, so the change is small and surgical. Let me read it and `bundle.ts` (the two places that build roots), plus how the tests assert paths.
+
+Beautifully centralized — it's **three one-line path changes** (`siteDir`, `distDir`, `bundleDirFor`). Let me check what the tests hardcode, then create the ticket and make the change.
+
+Everything's centralized. Let me scope the ticket and check the capture/shot test path refs.
+
+REQ-22 filed (`request-3ad342ca`). Now the refactor. Making all the file changes — source (2 lines), tests, and `.gitignore` — with assertions:
+
+File edits clean, and `capture.test.ts` uses the path functions (auto-updated). Now the physical move + gitignore verification:
+
+The move worked (renames tracked, gitignore correct). But I see stray top-level `references/` and `sandbox/` dirs — leftovers that are no longer ignored after retargeting. Let me check and clean them, then run tests.
+
+The concurrent session already captured **gigabytealchemy.ai** into `references/` — real data, not a stray. Let me move it under `storage/references/` (where it's gitignored) rather than lose it.
+
+The captured gigabytealchemy.ai bundle is safe under `storage/references/` (ignored), and top-level is clean. Now let me add the REQ-22 UAT — let me check the test import style first.
+
+Now the REQ-22 UAT — pure path-function + gitignore assertions:
+
+Now run the full suite to verify the refactor (and catch any missed paths):
+
+The failures are the safety net working — I missed two test files (**`req14-background.test.ts` and `req15-layer.test.ts` exist** — meaning REQ-14/15 got implemented by the concurrent session while we talked!). Let me find and fix *all* remaining hardcoded paths across the tests.
+
+Fixed both. Re-running the full suite:
+
+All 95 tests pass. Let me confirm the live CLI works end-to-end under `storage/`:
+
+`render` works (→ `storage/dist`), but `list` says "no sites" — there's a **root-directory scan** that bypasses the `siteDir` helper (list reads the *container* dir, not a per-slug path). Let me find it.
+
+Found it — `commands.ts:63` scans `path.join(ctx.cwd, ctx.root)` directly (the container dir), bypassing `siteDir`. Fixing that:
+
+`1c list` now finds both sites, `render` writes to `storage/dist`, and no residual non-storage joins remain. `list` had *no test* (that's why 95 passed while it was broken at runtime) — let me close that gap with an integration UAT, then commit.
+
+Let me drop the unused `beforeEach`/`afterEach` I added, then run the suite.
+
+96 tests pass but one file failed to load — let me see the actual error (likely an import/collection issue in the new test).
+
+That failure is **not from my refactor** — it's `req16-motion.test.ts`, a file that *just appeared* (17→18 test files) with a `TextEncoder`/`Uint8Array` environment error. The concurrent session is implementing **REQ-16 (motion) right now**, mid-flight. My storage change only touched path strings — it can't cause a TextEncoder realm error. Let me confirm the picture before committing.
+
+I need to stop before committing and surface something important, because the concurrency has now genuinely collided.
+
+## The storage refactor itself is done and verified ✅
+
+- All four trees now live under `storage/` (`storage/sites/` tracked; `sandbox`/`dist`/`references` gitignored — confirmed by `git check-ignore`).
+- `1c list` finds both sites, `1c render` writes to `storage/dist/…`, and I caught + fixed two spots the tests didn't cover (the `req14`/`req15` test paths and the `cmdList` container-scan).
+- The captured **gigabytealchemy.ai** bundle was moved safely under `storage/references/` (it was about to become un-ignored).
+- All **96 tests pass**.
+
+## But the working tree is now entangled with the concurrent session ⚠️
+
+The one failing item is **not mine**: `tests/req16-motion.test.ts` fails to *load* with a `TextEncoder … instanceof Uint8Array is incorrectly false` environment error. That file **appeared during my refactor** — and `git status` shows the concurrent session is mid-implementing **REQ-14/15/16 right now**, all uncommitted in this same tree:
+
+- `packages/framework/src/modules/background.ts`, `layer.ts`, `motion.ts` (+ `layer/`)
+- `packages/site-schema/src/{schema,types}.ts`, `render/render.ts`
+- `tests/req16-motion.test.ts` + `req16-motion-island.test.ts` (untracked, one failing)
+
+My storage change touched only path *strings* — it can't cause a `TextEncoder` realm error. That's their in-flight bug.
+
+## Why I'm not committing
+
+My refactor and their REQ-14/15/16 work are **interleaved in the same files** (I edited their `req14`/`req15` tests for paths; their untracked modules are needed for those tests to build). I can't cleanly commit my storage change in isolation without either (a) sweeping in their half-finished modules + the failing `req16` test, or (b) making a partial commit that won't build on checkout. Committing another session's work-in-progress under my ticket would be wrong.
+
+## What I'd do — you're driving both, so you decide
+
+1. **Let the REQ-14/15/16 session finish + commit first** (and fix the `req16` `TextEncoder` failure), then I commit the storage refactor cleanly on top. *(My recommendation.)*
+2. Or **pause that session**, let me commit the whole consistent state (minus the failing `req16` files), then resume it.
+3. Or you tell me it's fine to commit the union as-is and you'll sort it.
+
+Everything is intact and uncommitted in the tree — nothing lost, nothing broken by me. But two sessions on one working tree is exactly the clobber risk we've hit before, so I'd resolve the sequencing soon. How do you want to play it?
+
+<!-- xgd-turn id="912cc79f-5033-46f6-8f83-2ddb75dbdc22-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T16:57:17.328Z" -->
+#### You
+They are finished, I am running REQ-20 but can you make your commit?
 
 <!-- xgd-chat-end -->
