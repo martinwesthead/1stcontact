@@ -5,15 +5,19 @@ type: request
 title: Consolidate site-data trees under storage/
 created_by: xgd
 created_at: '2026-07-02T16:36:13.154059+00:00'
-updated_at: '2026-07-02T16:36:13.679243+00:00'
+updated_at: '2026-07-02T18:55:32.516060+00:00'
 completed_at: null
-last_field_updated: body
-status: draft
+last_field_updated: status
+status: free_coded
 fields:
   story_points: 2
   priority: medium
   auto_merge_back: true
   needs_review: false
+  commits:
+  - 6328691dec5a63ebf3213af201c92eef8a549346
+  - 98569bf29a15ce8e66587d4f1d7119526506ea87
+  version: 0.0.15
 ---
 
 ## Scope
@@ -46,3 +50,11 @@ Purely a **path/layout refactor** — no behaviour change. Touches the centraliz
 
 ## Out of scope
 Any behaviour change; D1 paths (later).
+
+## Shipped & verified (6328691)
+
+- Path builders (`store/paths.ts`, `cli/capture/bundle.ts`, `cli/commands.ts` list scan) resolve under `storage/`.
+- `.gitignore` retargeted: `storage/sites/` tracked; `storage/{sandbox,dist,references}/` ignored.
+- `git mv sites storage/sites`; captured `gigabytealchemy.ai` bundle relocated to `storage/references/`.
+- Fixed two spots tests missed (req14/15 paths, `cmdList` scan — now covered by a REQ-22 UAT).
+- `1c list`/`render` work under `storage/`. **All 102 tests pass.** Layout updated in [[DOC-12]]/[[DOC-13]].

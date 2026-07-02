@@ -5,7 +5,7 @@ type: comment
 title: Comment on chat CHAT-2
 created_by: xgd
 created_at: '2026-06-30T00:59:35.002204+00:00'
-updated_at: '2026-07-02T16:57:40.189702+00:00'
+updated_at: '2026-07-02T18:55:55.042147+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -3662,5 +3662,55 @@ Everything is intact and uncommitted in the tree — nothing lost, nothing broke
 <!-- xgd-chat role="user" ts="2026-07-02T16:57:17.328Z" -->
 #### You
 They are finished, I am running REQ-20 but can you make your commit?
+
+<!-- xgd-turn id="22e815ba-d36a-4273-b1f6-84882363832e-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T18:50:17.534Z" -->
+#### You
+I think REQ-22 is complete, can you finish it up and mark it free-coded?
+
+<!-- xgd-turn id="22e815ba-d36a-4273-b1f6-84882363832e-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T18:55:55.010Z" -->
+#### Claude
+REQ-22 is committed (`6328691`). Let me finish it: update the layout in the docs (part of scope), then set it free-coded with the commit. First, the doc path references:
+
+The code's done, tested, and committed — now the doc layout (part of scope). Updating DOC-12/13 to the `storage/` layout:
+
+Docs updated cleanly. Now finishing REQ-22 — appending a verification note to the body and marking it free-coded with the commit:
+
+Status didn't change — let me check why (the `--status` set may need a different path). Let me inspect the update result and the ticket state.
+
+The `--status` flag isn't valid — status goes through `--fields`. That means my whole prior update no-op'd (body note + commits didn't apply either). Redoing it correctly:
+
+Status transitions are likely gated (not a free-form field set). Let me see the actual error and the proper transition command:
+
+The gate requires `move-to-free-coded <uid> <sha> --version X.Y.Z` with a version bump present in a commit. Let me see how the concurrent session did it (REQ-16 just landed free-coded) and whether the version-bump script is implemented.
+
+Clear now — the concurrent session ran `xgd_version_bump` per free-coded ticket (REQ-16 → 0.0.13; version's now at 0.0.14). My storage commit didn't bump. I'll add the body note, make a version-bump commit, then use the gating command. First the body note + version bump:
+
+Bumped to 0.0.15 (writes only `package.json`). Committing the bump, then the gating command:
+
+Done — **REQ-22 is free_coded.**
+
+## REQ-22 complete
+
+- **Status:** `free_coded` · **version:** 0.0.15
+- **Commits:** `6328691` (the storage refactor) + `98569bf` (version bump 0.0.14→0.0.15, required by the gate)
+- **What shipped:** all four data trees consolidated under `storage/` — `storage/sites/` tracked, `storage/{sandbox,dist,references}/` gitignored (verified via `git check-ignore`); `git mv` preserved history; the already-captured **gigabytealchemy.ai** bundle relocated safely under `storage/references/`.
+- **Verified:** `1c list`/`render` work under `storage/`; **102 tests pass** (incl. 4 new REQ-22 UATs, one closing the untested `cmdList` gap that end-to-end verification caught).
+- **Docs:** layout updated in DOC-12/13.
+
+The gating flow needed the version bump in a commit + `xgd ticket move-to-free-coded <uid> <sha…> --version` — good to have learned that mechanism; I'll follow it directly next time rather than trying `--fields status`.
+
+## Clean state
+Top level is now tidy: `apps/ bin/ db/ docs/ packages/ storage/ tests/ tools/`. Your REQ-20 `storage/sites/gigabytealchemy` reproduction and `.xgd/tickets/search/` were left untouched (not swept into my commit).
+
+## Still-open threads (whenever you want them)
+- **BUG-1** — the render-CSS fix landed; the ticket could be closed out.
+- **REQ-20 / REQ-21** — duplicate import-milestone tickets (you're running REQ-20; REQ-21 is mine). One should be archived once you pick.
+- **Draft servers** on :4321/:4322 are now stale (dist moved under `storage/`) — a fresh `1c serve` will fix them.
+
+Nice — and good news from the collision: REQ-14/15/16 (background, layer, motion) all landed while we worked, so the primitives the two-site milestone needs are now in place.
 
 <!-- xgd-chat-end -->

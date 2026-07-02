@@ -5,7 +5,7 @@ type: comment
 title: Comment on request REQ-20
 created_by: xgd
 created_at: '2026-07-02T15:55:28.881494+00:00'
-updated_at: '2026-07-02T17:43:53.675159+00:00'
+updated_at: '2026-07-02T18:38:26.148252+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -363,5 +363,137 @@ Two natural next steps, your call:
 2. **Park it** and move on; REQ-20 stays blocked in the meantime.
 
 Want me to start REQ-23?
+
+<!-- xgd-turn id="fb0fc665-2806-4678-b673-364310420325-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T18:23:30.289Z" -->
+#### You
+ok REQ-23 is done - now can you complete the reconstruction?
+
+<!-- xgd-turn id="fb0fc665-2806-4678-b673-364310420325-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T18:28:24.358Z" -->
+#### Claude
+The critical fix landed — hero text is now legible white over the dark image, and the header is a dark band closely matching the reference's dark top. The reconstruction now renders end-to-end from our own modules with correct copy, palette bands, and footer.
+
+Let me record progress on the ticket. First I'll read the current REQ-20 body to preserve it.
+
+Let me append a progress update (preserving the existing body).
+
+Done. Here's where the reconstruction stands.
+
+## What I did
+
+With REQ-23's schema change confirmed in the tree, I re-ran the render — **all 11 modules now render cleanly** (previously 5 failed validation). Then I compared our output side-by-side against the capture and fixed the one glaring defect:
+
+- **Hero text was black over the dark lab image → illegible.** Set the hero `surface: inverse` dial → legible white text.
+- **Header was a stark white band.** Set header `surface: inverse` → dark navy band matching the reference's dark top.
+
+Both are pure site-definition dial changes — no framework code touched. Re-rendered and re-shot; the desktop reconstruction now reads as a faithful band-stack: correct verbatim copy, exact palette bands (`#e8dfd3` / `#d9ccba` / navy footer), legible hero, matching footer.
+
+## Honest status: content-complete, not yet "indistinguishable"
+
+The desktop **content** reconstruction is complete and legible. But six gaps remain against the reference, and **none are config-fixable** — each is a genuine module-capability gap that needs its own framework ticket (they're exactly the flashy-/treatment-primitive backlog this milestone exists to drive out):
+
+1. **Cinzel gold wordmark** — needs `@font-face` emission + display-font slot (font already mirrored)
+2. **Header-over-hero shared image band** — structural; header currently sits above the image, not over it
+3. **services-grid card treatments** — colored left borders, badge pills ("In development"/"Coming soon"), green ✓ checklists
+4. **Callout treatments** — green/gold left-border callouts + the light-blue "What We're Exploring" card
+5. **Side-by-side forms** — subscribe + contact are stacked; reference is two columns
+6. **Narrow content column** — reference body column is narrower than our `landing` width
+
+Closing any of 1–6 with raw CSS is forbidden by the model, so they're legitimate framework work.
+
+I appended all of this to REQ-20's body (preserved the existing content).
+
+## Process note
+
+I only changed **site-definition data** (two dial values under `storage/sites/`), not code under `packages/`/`tools/` — so I treated this as content authoring within the REQ-20 milestone rather than running the free-coding UAT cycle. 
+
+**Your call on next steps:** want me to file tickets for the six capability gaps (prioritized), or is the content-complete desktop render the stopping point for this session? I'd suggest #1 (Cinzel) and #3 (card treatments) as the highest-visual-impact items to tackle first.
+
+<!-- xgd-turn id="7633f4ea-dae7-41af-922b-651a4a863979-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T18:30:35.245Z" -->
+#### You
+Ok lets go through this slowly, we are not just reproducing this site, we are learning about the process as we go. Can you render and fire up a server so I can see the current version? Did you use the snapshot tool to "look" at your copy of the site? How was that to work with?
+
+<!-- xgd-turn id="7633f4ea-dae7-41af-922b-651a4a863979-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T18:31:40.615Z" -->
+#### Claude
+Let me fire up the server so you can see it live.
+
+Port 4321 is already taken (there's a stray dev server — that's also the source of those WebSocket port warnings). Let me use a different port.
+
+**Server's up** — open **http://localhost:4330/** in your browser. It's serving the `draft` source (with the hero/header `surface: inverse` fixes). Ignore the `WebSocket ... Port 24678 in use` line in the logs — that's a *stray* dev server from an earlier session squatting on 4321/4322/24678, not this one.
+
+## Yes — I used the snapshot tool ("AI eyes")
+
+To "look" at my copy I used the **`1c shot`** primitive (REQ-13, the screenshot/eyes gate):
+
+```
+1c shot gigabytealchemy --source draft --viewport desktop --out ours.desktop.png
+```
+
+…then Read the PNG so I could actually *see* it, and separately Read the reference capture (`storage/references/gigabytealchemy.ai/index/screenshot.full.png`) to compare. So the loop was: render → shot → view mine → view reference → eyeball the delta.
+
+## How it was to work with — honest notes
+
+**What worked well:**
+- The **full-page PNG + visual read is genuinely effective**. The black-on-black hero text was *instantly* obvious as an image — it would never have jumped out from reading the JSON or HTML. That validates the whole REQ-13 "AI eyes" premise: the gate catches what value-inspection can't.
+- `--out` to a file + Read is a clean handoff. One command, one image, done.
+
+**Friction I hit:**
+1. **Log noise on every invocation.** Each `render`/`shot`/`serve` spews three unrelated warnings — `WebSocket ... Port 24678 in use`, `markdown.gfm deprecated`, and `Missing pages directory: src/pages`. I grep them out every single time to find the one real success line. That's a papercut that adds up.
+2. **No comparison tooling.** The "eyes gate" is literally me holding two images in context and diffing them in my head. That caught the big legibility bug, but subtle gaps — column width, the 448px content column, spacing — are *unreliable* to judge by memory. A side-by-side or overlay/diff mode would make the gate far sharper.
+3. **`serve` doesn't fall back on a busy port** — it hard-errored `EADDRINUSE` on 4321 and I had to hunt for a free port. `shot` picks an ephemeral port automatically and was fine; `serve` should do the same.
+4. **Each `shot` spins a full headless browser + ephemeral server (~few seconds).** Fine one-off; would be sluggish in a tight iterate-and-recheck loop.
+
+**The takeaway for the process:** the eyes primitive proved its worth on a gross defect, but to hit REQ-20's *"indistinguishable"* bar we'll want a **diff/overlay mode** — subtle treatment gaps won't survive eyeball-from-memory comparison.
+
+Want me to capture these as design/process lessons in memory (per the design-build plan), or keep going and look at the live site together first?
+
+<!-- xgd-turn id="f24507a0-aec7-4b63-8f06-8ed11a50f64b-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T18:36:54.115Z" -->
+#### You
+I would like you to create tickets for 1-3 please. 4 we can live with for now
+
+<!-- xgd-turn id="f24507a0-aec7-4b63-8f06-8ed11a50f64b-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T18:38:26.120Z" -->
+#### Claude
+The user wants tickets for gaps 1–3. (The background server got stopped per the notification — I'll restart it if you still want to view it live; let me get the tickets filed first.)
+
+Let me check the ticket creation interface before filing.
+
+Let me file the three capability tickets, each scoped as a framework gap that blocks REQ-20's fidelity bar.
+
+All three filed:
+- **REQ-24** — Display-font slot + `@font-face` emission (Cinzel wordmark)
+- **REQ-25** — Header-over-hero: composite header onto shared image band
+- **REQ-26** — services-grid card treatments (accent border, status badge, ✓ checklist)
+
+Let me link them from REQ-20 so the milestone tracks its blockers.
+
+Done. Three capability tickets filed and linked back to the REQ-20 milestone:
+
+| Ticket | Gap | Points |
+|--------|-----|--------|
+| **REQ-24** | Display-font slot + `@font-face` emission (Cinzel gold wordmark) | 3 |
+| **REQ-25** | Header-over-hero — composite header onto shared image band | 3 |
+| **REQ-26** | services-grid card treatments — accent border, status badge, ✓ checklist | 5 |
+
+Each body states the scope, acceptance criteria, and that it blocks a specific REQ-20 fidelity gap. I recorded on REQ-20 that gap #4 (callout treatments) is **accepted as-is for now** per your call, and noted gaps #5/#6 (side-by-side forms, narrow column) as not-yet-filed so nothing silently drops.
+
+A couple of things I flagged inside the tickets that are worth your eye when they get picked up:
+- **REQ-24** — the gold-gradient *text* treatment may not ride on the font work alone; it might need its own small color/gradient-text primitive. I noted it rather than assumed it.
+- **REQ-25** — this likely overlaps REQ-15 (`layer`/compositing); I left the "is it a header variant or a compositing concern?" decision open for the implementer.
+
+Want me to:
+1. **Restart the live server** (it got stopped) so you can look at the current version, or
+2. File **REQ-27/28** for gaps #5 and #6 to keep the backlog complete, or
+3. Capture the **process/tooling lessons** from the last exchange (log noise, no diff mode, serve port fallback) into memory per the design-build plan?
 
 <!-- xgd-chat-end -->
