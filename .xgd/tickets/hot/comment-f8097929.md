@@ -5,7 +5,7 @@ type: comment
 title: Comment on request REQ-20
 created_by: xgd
 created_at: '2026-07-02T15:55:28.881494+00:00'
-updated_at: '2026-07-03T15:27:27.350701+00:00'
+updated_at: '2026-07-03T16:08:07.584446+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -1454,5 +1454,187 @@ One thing I noted in the ticket rather than expanding scope: the two **non-text*
 Yes please add them.
 
 I was also thinking about your snapshot diff idea but I'm not sure how to implement it. a pixel-pixel diff of the snapshots would likely show massive differences on sites that could be effectively indistinguishable - but I know that there are fancy hash algorithms that are intended to provide copyright type measures and are robust against small changes - however I don't know if they tell you where the changes are or just measure the delta between images
+
+<!-- xgd-turn id="6c7ef970-fde0-427a-a93b-e2f4b9c60bed-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-03T15:41:41.681194+00:00" -->
+#### Claude
+Two things here: (1) add scrim + vertical anchor to the manifest/diff, and (2) the perceptual-hash question. Let me investigate the capture data model first so I design the scrim/anchor fields to fit what's actually captured.
+
+The scrim is already captured — `Background.overlay?: { color; opacity }`. Vertical anchor is not (Layout has only `contentAlign` horizontal). Let me see how both sides are extracted and how the live reproduction produces its signals.
+
+Now let me see how `RawBand` becomes a `Section` — specifically whether `Background.overlay` (the scrim) is populated today, and what geometry is available for anchor.
+
+Now I have the full pipeline. Key findings that shape the design:
+
+- **Scrim**: `Background.overlay` exists on the capture side but is only populated for a gradient-over-image on *one* element (`firstOverlay` in sections.ts). The real gigabytealchemy pattern is a **separate translucent overlay div** (`bg-slate-950/30`) — not captured on either side today, and `flattenSignals`/`flattenCapture` ignore `background` entirely.
+- **Anchor**: not captured at all — runs carry no geometry; `Layout` has only horizontal `contentAlign`.
+
+So both sides need extract-script work, then a section-level slice in the manifest. Let me check what RawBand/section fixtures exist in tests so I don't break them.
+
+Let me check how tests construct `RawBand`/`RawSignals` literals, so new required fields don't break them.
+
+REQ-32 already shipped the hero `scrim` and `contentAnchor` **dials** (rendering side). So the reproduction can already express them — the gap is purely capture + diff. Let me see how tests build raw bands/signals (shared helper?) and how REQ-32 tests set things up.
+
+One RawBand literal in `tests/capture.test.ts` (line 204); vitest uses esbuild (no typecheck), so undefined new fields won't break runtime — I'll read them defensively anyway. Let me look at the Chromium test fixture so I can extend it to exercise scrim + anchor extraction.
+
+Design is clear. REQ-32 already shipped the hero `scrim`/`contentAnchor` dials, so this is purely capture + diff. Let me set up a task list and implement across the pipeline.
+
+Now the implementation. **Step 1 — `types.ts` Layout:**
+
+**Step 2 — `extract.ts`**: add fields to `RawBand` and compute them in the script.
+
+Now add the browser-side helpers and populate the fields. Insert the helpers after `insideAny`:
+
+Now populate the two fields in the band push:
+
+**Step 3 — `sections.ts`**: prefer `band.overlay`, carry anchor into Layout.
+
+Now carry `contentAnchorRatio` into the Layout in `sectionFromBands`:
+
+`head.contentAnchorRatio ?? null` handles undefined test bands. Now check for other `Layout` constructions in src that would fail the real tsc build:
+
+Only one Layout literal (updated) and no render consumers. **Step 4 — `values-diff.ts`** (the diff). Let me re-read its current state after my casing edits.
+
+Now the manifest model — add `SectionValues`, `sections`, and the two new delta properties:
+
+Now update the two flatten functions to populate `sections`:
+
+Now SEVERITY and DiffOptions:
+
+Now the labels and the diff body. Let me read the current label helpers + `diffManifests`:
+
+Now add the label helpers, refactor `push` onto a `record` base, add the section loop, and update the docstring.
+
+Now add the section loop, right before the sort:
+
+Now update the top-of-file docstring to mention the section-level slice:
+
+Let me check the barrel export so tests can import the new type if needed:
+
+Now the fixture + UATs. Let me check whether any other test also captures `values.html` before I modify it.
+
+Safe — `capture.test.ts` uses `rich.html`/`uniform.html`. Let me extend `values.html` with a scrim + low-anchored hero:
+
+Now the UATs. First the browser-free section-diff block, inserted after the verbatim-text suite:
+
+Now the Chromium extraction UATs — asserting the hero scrim + anchor are read from the DOM:
+
+Now run the suite:
+
+22 passed. The duration is suspiciously fast for real Chromium — let me confirm the browser extraction tests actually **ran** (not skipped), since they validate the extract-script changes.
+
+Confirmed — the real-Chromium hero scrim + anchor tests ran and passed, validating the extract-script changes. Now the full suite for regressions across the capture pipeline:
+
+196 passed (189 + 7 new). Now typecheck the build:
+
+TSC clean, 196 tests green. Let me complete the task, version-bump, and commit.
+
+Now update REQ-31: append body note, then re-gate with all commits + new version.
+
+Done — REQ-31 extended again and re-gated to `free_coded` with all three commits at v0.0.26.
+
+## What I added (scrim + anchor)
+
+Both were captured/diffed nowhere; now they're first-class. Commit `6db3069`.
+
+- **Capture** (`extract.ts`): per band, (1) detect a **scrim** — a full-bleed (≥60% cover) descendant with a semi-transparent background, i.e. the *separate* `bg-slate-950/xx` overlay div that a band's own background can't reveal; (2) measure a **content anchor ratio** from geometry (content-box centre ÷ band height), so `pt-80` and flex `justify-end` read identically. `sections.ts` routes the scrim onto `Background.overlay` and the ratio onto the new `Layout.contentAnchorRatio`.
+- **Diff** (`values-diff.ts`): `ValueManifest` gains a `SectionValues[]` slice aligned by ordinal index (hero = §0). Two new deltas: `overlay` (sev 82, colour + opacity within 0.1) and `contentAnchor` (sev 65, ratio within 0.15, reported `bottom (0.82)` → `center (0.50)`).
+- **Evidence**: 7 new UATs including two real-Chromium tests that capture the scrim (`#020617 @ 0.45`) and a low anchor (>0.6) from a hero fixture. Full suite **196 green**, `tsc` clean.
+
+Every known gigabytealchemy miss — the six value deltas, the casing slip, and now scrim + anchor — is mechanically flagged. Nothing in that class is eyes-only.
+
+---
+
+## On perceptual hashing for a screenshot backstop
+
+Your instinct is right on both counts, and the distinction you're reaching for is the crux:
+
+**Perceptual/copyright hashes give you a scalar, not a location.** pHash (DCT), wHash (wavelet), and the content-ID ones (Facebook **PDQ**, Microsoft **PhotoDNA**, blockhash) all collapse an image to a small fingerprint (64–256 bits); similarity is the **Hamming distance** between two fingerprints. That number says "somewhat different" — it does **not** tell you *where*. Worse for us: they deliberately downsample hard (pHash → 32×32 → 8×8 low-frequency DCT), so they're blind to exactly our failure class — a near-neighbour hex, 72 vs 48px, a subtle scrim. They're built to survive recompression/rescaling for dedup, which is the opposite of what a fidelity check wants. **Wrong tool.**
+
+**The tools that localize are different:**
+- **SSIM / MS-SSIM** — computed per-window, so it yields a full-resolution **similarity heatmap** *and* a scalar mean. This is the standard "how similar, and where" answer. Perceptually weighted, forgiving of imperceptible shifts.
+- **Threshold pixel-diff** (e.g. `pixelmatch`) — a per-pixel diff image + changed-pixel count, using a perceptual colour-distance threshold and anti-aliasing detection so it ignores sub-pixel noise. Localizes precisely.
+
+**Why your raw pixel diff "shows massive differences" on near-identical sites**: it's almost always **misalignment** — a 1px reflow, different font hinting, sub-pixel AA — which a naive diff punishes globally. The fixes are: align first, downscale/blur slightly, use a perceptual threshold. SSIM tolerates this far better than raw diff.
+
+**The design that fits what we already have**: the capture stores the full-page screenshot **plus a per-section crop box** for every section. So the natural move is a **section-wise SSIM** — compare each section's crop between the reference screenshot and our rendered screenshot, align *per section* (dodging whole-page alignment pain), and emit a ranked list of the worst-scoring sections. That localizes to a section, reuses geometry we already compute, and produces exactly the crops to hand the vision pass.
+
+But the important framing: **an image check is a blunt backstop, not the primary.** It tells you "this region looks off," never "the subhead is #FFFFFF, should be #F5E6A3." The structured values-diff we just finished already localizes *semantically* and reads the exact wrong value — for everything it models. So the division of labour is: values-diff for value-level facts (done, now including scrim/anchor), and a section SSIM heatmap only as a coarse net for what the manifest still can't encode — spacing rhythm, an unexpected extra/missing visual element, overall composition.
+
+This is genuinely exploratory and you said you're unsure how to implement it — I'd suggest a spike ticket (section-SSIM prototype over the gigabytealchemy pair) rather than folding it into REQ-31. Want me to file that as a separate ticket?
+
+<!-- xgd-turn id="b1ac39ed-af86-4dd9-a1d5-089d67153187-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-03T16:02:14.195009+00:00" -->
+#### You
+Lets punt on this for now. I'd like you to make sure that you have captured all you know about how to do a reproduction in your how to doc ticket.
+
+Then I'd like you to move our current implementation of Gigabyte Alchemy to the sandbox and create a new ticket for running the capture.
+
+Before we run it I am still seeing difference between the two on the front page.
+(1) title text is still smaller than the original and located higher
+(2)the color gradient along the title is not captured
+(3) the subtitle "Intentional Software" is large font and again not quite in the right location
+(4) the paragraph below - font size is a little smaller and text is white - original is gold
+
+Will you new manifest help with these? If so no need to fix this version, lets retry the import from scrathc and see how it looks
+(4) the par
+
+<!-- xgd-turn id="b1ac39ed-af86-4dd9-a1d5-089d67153187-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-03T16:08:07.558405+00:00" -->
+#### Claude
+Let me punt on the SSIM work as you asked. First, let me investigate the three moving parts: the how-to doc ticket, DOC-19, the sandbox concept, and the storage layout.
+
+The how-to doc is **DOC-19**. Let me read it in full, plus understand the sandbox concept and storage layout in parallel.
+
+DOC-19 is thorough but written *before* REQ-31/REQ-32 landed — it still says "when REQ-31 lands," calls `capture.json` partial, and lists scrim/anchor/gradient as "still-missing." I need to bring it current. First let me nail down the exact CLI surface and the sandbox/storage semantics so the runbook and the moves are accurate.
+
+`--sandbox` targets a gitignored `sandbox/` scratch tree vs the git-tracked `sites/` tree. So "move to sandbox" = relocate the current gigabytealchemy site into the sandbox tree. Let me confirm the exact storage paths.
+
+I have the full picture. The on-disk capture bundle (`storage/references/gigabytealchemy.ai/index/capture.json`, dated Jul 2 09:32) **predates REQ-31**, so it lacks the new value fields — a re-capture is required for the diff to see gradient/scrim/anchor. Let me answer your question first, then do the three tasks.
+
+## Will the new manifest catch your four diffs?
+
+Yes — once the reference is **re-captured** (the current bundle is pre-REQ-31, so it can't diff what it never recorded):
+
+| # | Your observation | Flagged by | 
+|---|---|---|
+| 1 | Title smaller + higher | `fontSizePx` (REQ-31) + `contentAnchor` (new, section-level) |
+| 2 | Title gradient not captured | `gradient` — angle + stops (REQ-31) |
+| 3 | Subtitle large + wrong location | `fontSizePx` ✓; location only at whole-section anchor granularity (no per-element geometry) — **partial** |
+| 4 | Paragraph smaller + white vs gold | `fontSizePx` + `color` (the flagship case) ✓ |
+
+So 3 of 4 are fully mechanical, and #3's font size is caught (its fine sibling-relative position is the one residual — we don't record per-run geometry). **Agreed: don't hand-fix this draft — move it aside, re-capture, and re-run the import driven by the diff.** Let me set that up.
+
+Now the updated DOC-19 body — preserving every lesson, correcting the stale REQ-31/32 references:
+
+DOC-19 is current. Now **Task 7 — move the site to sandbox:**
+
+Move succeeded — impl preserved in gitignored `storage/sandbox/gigabytealchemy`, removal from `sites/` staged. Let me commit it (site-def relocation, exempt from free-coding ceremony):
+
+Now **Task 8 — create the capture/import ticket.** Let me check the create CLI:
+
+All three set-up tasks are done. Summary:
+
+## 1. DOC-19 runbook — brought current
+Rewrote it to reflect that **REQ-31 and REQ-32 have landed**, preserving every existing lesson. Key updates:
+- `capture.json` is no longer "partial" — it now records the full value manifest (gradient, sizes, left-bars, line-height, letter-spacing, padding, **scrim**, **content anchor**), with an explicit **re-capture caveat** for pre-REQ-31 bundles.
+- New **"The mechanical gate — `1c values-diff`"** section: exact command, the full ranked property list (incl. `text`/casing, `overlay`/scrim, `contentAnchor`), the exit-non-zero-until-clean gate, and honestly what it *doesn't* catch (per-element relative position, non-manifest visuals).
+- The procedure now has an explicit **diff-gate step** before eyes, and REQ-32 primitives moved from "still-missing" to "available."
+
+## 2. Current impl → sandbox
+`git mv`-equivalent: `storage/sites/gigabytealchemy` → `storage/sandbox/gigabytealchemy` (gitignored scratch, confirmed ignored). Removal from `sites/` committed as `d7cdc1e`; the old impl is preserved on disk and in history. `sites/` is now clean for a fresh build.
+
+## 3. New ticket — **REQ-33**
+"Fresh diff-driven re-import of gigabytealchemy.ai." It captures: the **re-capture-first** requirement (the on-disk bundle predates REQ-31), your four observed deltas mapped to the diff properties that now flag them, the full DOC-19 procedure, and an acceptance criterion of **`values-diff` exiting clean (zero deltas)**.
+
+## On your four diffs
+Confirmed above — 3 of 4 are fully mechanical once re-captured; #3's font size is caught but its fine sibling-position isn't (section-anchor granularity only). So your instinct is right: **don't hand-fix the sandboxed draft — re-import.**
+
+---
+
+**Next step is the actual re-import (REQ-33), which starts by capturing the live site** (`1c capture page https://gigabytealchemy.ai/` — an outward network call). That's a substantial multi-pass effort. Want me to kick it off now, starting with the re-capture?
 
 <!-- xgd-chat-end -->

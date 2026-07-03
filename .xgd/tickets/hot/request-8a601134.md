@@ -5,10 +5,10 @@ type: request
 title: '1c shot: page screenshot primitive (AI eyes)'
 created_by: xgd
 created_at: '2026-07-01T00:44:36.160058+00:00'
-updated_at: '2026-07-02T01:03:31.647125+00:00'
+updated_at: '2026-07-03T15:35:47.142675+00:00'
 completed_at: null
 last_field_updated: status
-status: free_coded
+status: ready_to_reconcile
 fields:
   story_points: 2
   priority: medium

@@ -5,10 +5,10 @@ type: request
 title: 'Header-over-hero: composite header onto shared image band'
 created_by: xgd
 created_at: '2026-07-02T18:37:43.634669+00:00'
-updated_at: '2026-07-02T19:31:17.604808+00:00'
+updated_at: '2026-07-03T15:35:51.331648+00:00'
 completed_at: null
 last_field_updated: status
-status: free_coded
+status: ready_to_reconcile
 fields:
   priority: medium
   story_points: 3

@@ -6,7 +6,7 @@ title: 'Fidelity verification loop: capture computed per-element values + mechan
   values-diff'
 created_by: xgd
 created_at: '2026-07-03T01:37:35.057755+00:00'
-updated_at: '2026-07-03T15:26:30.258104+00:00'
+updated_at: '2026-07-03T15:40:45.203785+00:00'
 completed_at: null
 last_field_updated: status
 status: free_coded
@@ -18,7 +18,8 @@ fields:
   commits:
   - 6fdd57423dc650d4666a027508d0272685abcb4c
   - c7219d6510814c69a5ab03ed0b6833d522e38e6f
-  version: 0.0.25
+  - 6db30692825ac56aaa79ed05a0956d2310b4a6f4
+  version: 0.0.26
 ---
 
 ## Problem
@@ -117,3 +118,41 @@ Full suite green (189 tests).
 **Still eyes-only (out of this text-run diff's scope, tracked on [[REQ-32]]):**
 non-text treatments — the hero **scrim/overlay** and **content vertical anchor** —
 are not text runs, so the manifest can't encode them and the diff can't flag them.
+
+
+---
+
+## Extension — section-level scrim + vertical anchor (commit 6db3069, v0.0.26)
+
+**Second gap closed.** The manifest was text-run only, so treatments that belong
+to a whole section rather than a text run — the hero **scrim/overlay** and the
+**content vertical anchor** — could not be encoded, and both slipped through
+eyes-only (the remaining two gigabytealchemy hero misses). `flattenCapture`/
+`flattenSignals` ignored `section.background` and any notion of layout position.
+
+**Capture.** `extract.ts` now, per band: (1) detects a **scrim** — a visible
+full-bleed (≥60% cover) descendant painting a semi-transparent (0<alpha<1)
+background, i.e. a *separate* `bg-slate-950/xx` overlay div that the band's own
+background can never reveal; (2) measures a **content anchor ratio** — the text
+content-box centre as a fraction of band height, from geometry, so `pt-80`
+padding and flex `justify-end` read identically. `sections.ts` routes the scrim
+onto `Background.overlay` (taking precedence over the gradient-in-image overlay)
+and the ratio onto the new `Layout.contentAnchorRatio`.
+
+**Diff.** `ValueManifest` gains a `SectionValues[]` slice aligned by **ordinal
+index** (the hero is always §0; the caveat is that a segmentation mismatch on a
+lower section has no counterpart and is skipped, not mis-reported). `diffManifests`
+emits two new deltas: `overlay` (severity 82; colour exact + opacity within 0.1)
+and `contentAnchor` (severity 65; ratio within 0.15, reported as e.g.
+`bottom (0.82)` → `center (0.50)`). Section deltas are labelled `§<n>` / role
+`section`.
+
+**Evidence** — 7 new UATs in `tests/req31-values-diff.test.ts`: missing-scrim
+flagged; scrim opacity tolerance ok + colour diff; anchor delta flagged; anchor
+tolerance ok; scrim outranks anchor; and two **real-Chromium** tests capturing
+the scrim (`#020617 @ 0.45`) and a low anchor (>0.6) out of a hero fixture
+(`values.html`). Full suite 196 green; `tsc` clean.
+
+With this, every one of the known gigabytealchemy misses — the six value-level
+deltas, the casing slip, and now the scrim + anchor — is mechanically flagged;
+nothing in that class is eyes-only anymore.

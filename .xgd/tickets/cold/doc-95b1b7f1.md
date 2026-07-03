@@ -5,7 +5,7 @@ type: doc
 title: Site Storage, Versioning & Rendering Model
 created_by: xgd
 created_at: '2026-06-30T20:21:05.234795+00:00'
-updated_at: '2026-06-30T20:35:01.348247+00:00'
+updated_at: '2026-07-02T18:52:43.389035+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -32,8 +32,10 @@ This model **supersedes** the earlier framing in which a site was a single flat 
 
 ## 3. On-disk layout (current — file-backed)
 
+> **All four data trees live under `storage/` (REQ-22):** `storage/sites/` (git-tracked) plus `storage/sandbox/`, `storage/dist/`, and `storage/references/` (gitignored). Paths below are relative to `storage/`.
+
 ```
-sites/<slug>/                  REAL sites — TRACKED IN GIT (source of truth, VERSIONED)
+storage/sites/<slug>/                  REAL sites — TRACKED IN GIT (source of truth, VERSIONED)
   draft/                       mutable working copy (hand-edited)
     site.json                  metadata: slug, accountId, displayName, theme, nav
     pages/  home.json about.json   one file per PAGE (module instances inline)
@@ -42,9 +44,9 @@ sites/<slug>/                  REAL sites — TRACKED IN GIT (source of truth, V
     0001/  0002/  ...          locked, COMPLETE snapshots (site.json + pages/ + assets/)
   history.json                 revision log (no head pointer; live = latest)
 
-sandbox/<slug>/                THROWAWAY test sites — GITIGNORED (identical internal shape to sites/)
+storage/sandbox/<slug>/                THROWAWAY test sites — GITIGNORED (identical shape to storage/sites/)
 
-dist/<root>/<slug>/            RENDERED output — GITIGNORED, regenerated (root = sites | sandbox)
+storage/dist/<root>/<slug>/            RENDERED output — GITIGNORED, regenerated (root = sites | sandbox)
   draft/                       private preview   <- 1c render
   published/                   public site       <- 1c publish
 ```
@@ -57,11 +59,11 @@ Three roots, two of them gitignored:
 
 | Root | Purpose | Git |
 |---|---|---|
-| `sites/` | Real sites we will build and deploy to Cloudflare | **Tracked** |
-| `sandbox/` | Throwaway space for experimenting with site creation (identical internal shape to `sites/`) | **Gitignored** |
-| `dist/` | All rendered output, namespaced `dist/<root>/<slug>/` | **Gitignored**, never committed, always regenerable |
+| `storage/sites/` | Real sites we will build and deploy to Cloudflare | **Tracked** |
+| `storage/sandbox/` | Throwaway space for experimenting with site creation (identical internal shape to `storage/sites/`) | **Gitignored** |
+| `storage/dist/` | All rendered output, namespaced `storage/dist/<root>/<slug>/` | **Gitignored**, never committed, always regenerable |
 
-`.gitignore` carries `/sandbox/` and `/dist/`. The `1c` CLI operates on `sites/` by default; `--sandbox` targets `sandbox/`. Rendered output is **never** committed in either root — it is always reproducible from source.
+`.gitignore` carries `/storage/sandbox/`, `/storage/dist/`, `/storage/references/`. The `1c` CLI operates on `storage/sites/` by default; `--sandbox` targets `sandbox/`. Rendered output is **never** committed in either root — it is always reproducible from source.
 
 ## 4. history.json
 
@@ -97,8 +99,8 @@ Append-only log; one entry per publish. No `head` field (live = highest id).
 ## 5. Lifecycle & CLI (`1c`)
 
 - **Author** edits files under `draft/` by hand.
-- `1c render <slug>` — render `draft/` -> `dist/<slug>/draft/` (**private** preview).
-- `1c publish <slug> [-m "msg"]` — snapshot `draft/` into the next locked revision, diff vs previous, append to `history.json`, **and render the new latest revision -> `dist/<slug>/published/` (public)**. Publish *always* renders.
+- `1c render <slug>` — render `draft/` -> `storage/dist/<slug>/draft/` (**private** preview).
+- `1c publish <slug> [-m "msg"]` — snapshot `draft/` into the next locked revision, diff vs previous, append to `history.json`, **and render the new latest revision -> `storage/dist/<slug>/published/` (public)**. Publish *always* renders.
 - `1c checkout <slug> [<revId>]` — copy a revision's contents into `draft/` (default: latest).
 - `1c revisions <slug>` — print the history log.
 - **Rollback** is not a distinct command: `1c checkout <old>` then `1c publish`.
@@ -113,7 +115,7 @@ Append-only log; one entry per publish. No `head` field (live = highest id).
 | Rendered from | `draft/` | latest revision |
 | Audience | author only (private) | public |
 | Triggered by | `1c render` | `1c publish` (always) |
-| Lives in | `dist/<slug>/draft/` | `dist/<slug>/published/` |
+| Lives in | `storage/dist/<slug>/draft/` | `storage/dist/<slug>/published/` |
 
 - Server-side only (see principle 6). The builder's future preview, when built, is server-rendered HTML shown in an iframe — not a client-side renderer.
 
@@ -121,12 +123,12 @@ Append-only log; one entry per publish. No `head` field (live = highest id).
 
 | Concept | File (now) | Cloudflare (eventual) |
 |---|---|---|
-| draft source | `sites/<slug>/draft/` | D1 draft + R2 draft assets |
+| draft source | `storage/sites/<slug>/draft/` | D1 draft + R2 draft assets |
 | revision (snapshot) | `revisions/NNNN/` | R2 site snapshot + D1 revision metadata |
 | history log | `history.json` | D1 `revisions` table |
 | asset bytes | `.../assets/` | R2 (versioned with the revision) |
-| published render | `dist/<slug>/published/` | Workers Static Assets / R2 (public URL) |
-| draft preview | `dist/<slug>/draft/` | authenticated preview surface (control-app) |
+| published render | `storage/dist/<slug>/published/` | Workers Static Assets / R2 (public URL) |
+| draft preview | `storage/dist/<slug>/draft/` | authenticated preview surface (control-app) |
 | "live = latest" | highest revision | derivable; no `published_revision_id` pointer needed |
 
 ## 8. Versioning storage strategy
