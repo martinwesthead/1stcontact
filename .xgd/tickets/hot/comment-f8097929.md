@@ -5,7 +5,7 @@ type: comment
 title: Comment on request REQ-20
 created_by: xgd
 created_at: '2026-07-02T15:55:28.881494+00:00'
-updated_at: '2026-07-02T18:38:26.148252+00:00'
+updated_at: '2026-07-03T00:22:59.724383+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -495,5 +495,327 @@ Want me to:
 1. **Restart the live server** (it got stopped) so you can look at the current version, or
 2. File **REQ-27/28** for gaps #5 and #6 to keep the backlog complete, or
 3. Capture the **process/tooling lessons** from the last exchange (log noise, no diff mode, serve port fallback) into memory per the design-build plan?
+
+<!-- xgd-turn id="b2195402-382e-49fd-ad4d-0330dd13d35f-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T21:26:31.964Z" -->
+#### You
+How are we doing can you complete the implementation of the website?
+
+<!-- xgd-turn id="b2195402-382e-49fd-ad4d-0330dd13d35f-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T21:33:37.424Z" -->
+#### Claude
+The hero heading is now proportioned sensibly (still white — gold isn't config-reachable), and the page reads as the warm cream band-stack the reference is. Here's an honest status.
+
+## Where we are
+
+Since last session, **REQ-24/25/26 all landed** (`free_coded`) and are wired in. Combined with this session's config work, the desktop reproduction is now close:
+
+| Element | Status |
+|---|---|
+| Gold Cinzel wordmark (REQ-24) | ✅ rendering |
+| Header composited over hero image (REQ-25) | ✅ |
+| Card badges + ✓ checklists + accent borders (REQ-26) | ✅ |
+| **Cream band-stack colors** (this session) | ✅ fixed — bands were rendering white |
+| Cards pop as near-white on cream | ✅ |
+| Hero heading no longer oversized | ✅ |
+
+**What I changed this session (config/site-data only, no framework code):** corrected the theme base (`bg` white→`#e8dfd3`, card `surface`→near-white `#f7f4ee`), and switched every band from the dead `background` field to the `surface` dial. Hero heading `lg`→`md`.
+
+## The key finding worth capturing
+
+The bands were rendering white because of a **genuine framework limitation**: the REQ-14 section `background` field emits a color layer *behind* the module (`z-index:0`), but band-stack modules (`text-block`, `services-grid`, `contact-form`) paint their own opaque `--color-bg` on top (`z-index:2`), hiding it. So `background` silently works **only** for transparent text-over-image modules like `hero` — not for solid band colors. I worked around it with `surface` dials, but this is a real gap: the obvious authoring approach (`background: {color}`) produces nothing visible.
+
+## Remaining deltas to "indistinguishable" — all framework gaps
+
+- **Hero heading is white, reference is gold** — no hero heading-treatment dial (only `header` has `logoTreatment`).
+- **Wordmark left-aligned, reference is centered** — `header` has no align dial.
+- **Building cards side-by-side, reference stacks them full-width** — `services-grid` has only `three-col`/`two-col`, no stacked variant.
+- **Forms stacked, reference is side-by-side** (gap #5, never filed).
+- Accepted as-is (your earlier call): callout treatments, light-blue "Exploring" card, narrow column.
+
+## Two decisions for you
+
+1. **Commit the config?** `storage/sites/gigabytealchemy/` is still untracked. These are site-data/config edits (no framework code), so they don't need the free-coding UAT cycle — but I won't commit without your go-ahead.
+2. **File tickets for the new framework gaps?** The `background`-defeated-by-surface finding is the most valuable one (it'll bite every band-stack site, not just this one). I can also file the hero-gold-heading, header-centering, and stacked-cards gaps. I won't create any ticket unless you say so.
+
+Want me to do either, or look at something first? The live server can be brought back up if you'd like to see it in the browser.
+
+<!-- xgd-turn id="cab7f650-0acc-4b1d-a96d-a6c25b138b6e-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T21:46:04.767Z" -->
+#### You
+Can you reneder it and start a server so I can see please?
+
+<!-- xgd-turn id="6a7f4137-7898-442f-9fb7-f8643f56f442-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T21:46:57.425Z" -->
+#### You
+Sorry can you reproduce that output it was lost
+
+<!-- xgd-turn id="6a7f4137-7898-442f-9fb7-f8643f56f442-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T21:47:29.167Z" -->
+#### Claude
+I'll render the site and start a server so you can view it.
+
+Render succeeded. Now starting the server on a free port (4321 is held by a stray dev server from earlier).
+
+The server is up and responding.
+
+**Open → http://localhost:4330/**
+
+It's serving the `draft` source with all the current work: the gold Cinzel wordmark (REQ-24), header composited over the hero image (REQ-25), services-grid card treatments — badges, ✓ checklists, accent borders (REQ-26) — and this session's cream band-stack color fixes.
+
+Take a look and tell me what you see against the reference. When you're ready, the useful next questions are:
+
+1. **Commit the config?** `storage/sites/gigabytealchemy/` is still untracked (site-data only, no framework code).
+2. **The remaining "indistinguishable" deltas** — hero heading is white vs. reference gold, wordmark left vs. centered, Building cards side-by-side vs. stacked — are all framework-capability gaps that would need their own tickets, not config fixes.
+
+Let me know what stands out to you in the browser.
+
+<!-- xgd-turn id="7cb5c9b3-e35e-4c76-9424-44d674692f71-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T21:48:00.742Z" -->
+#### You
+I can't see the server?
+
+<!-- xgd-turn id="7cb5c9b3-e35e-4c76-9424-44d674692f71-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T21:48:24.632Z" -->
+#### Claude
+The server was torn down when the previous process exited (curl now gets connection refused). Let me restart it.
+
+Back up and confirmed responding (HTTP 200).
+
+**Open → http://localhost:4330/**
+
+The earlier server was a background process from the previous session; it got torn down when that process exited, which is why the connection was refused. This one is freshly started and serving the `draft` build.
+
+If it dies again mid-review, just say so and I'll relaunch it — the render output is already on disk, so a restart is instant. Let me know what you see against the reference.
+
+<!-- xgd-turn id="b0b3e08d-bc21-401b-9fe8-130aa0da445f-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T21:48:49.808Z" -->
+#### You
+Please can you give me the command to run the server it dies at the end of your turn
+
+<!-- xgd-turn id="b0b3e08d-bc21-401b-9fe8-130aa0da445f-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T21:48:57.222Z" -->
+#### Claude
+Right — background shells are tied to my turn lifecycle, so they get torn down. Run this yourself in a terminal and it'll stay up as long as you leave it running:
+
+```bash
+cd /Users/martin/Projects/1stcontact
+node tools/generate/bin/1c.mjs serve gigabytealchemy --source draft --port 4330
+```
+
+Then open **http://localhost:4330/**. Leave that terminal running while you review; `Ctrl-C` to stop it.
+
+If you change site config and want to see it, re-render in a *separate* terminal (the serve command just serves what's on disk):
+
+```bash
+node tools/generate/bin/1c.mjs render gigabytealchemy --source draft
+```
+
+The dev server has live-reload wired up (that's the port 24678 noise I've been filtering), so a re-render should refresh the browser automatically without restarting the serve process.
+
+<!-- xgd-turn id="c410f9f3-adc3-4bd5-b909-9f5c22a04f11-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T21:50:32.528Z" -->
+#### You
+ok I see it - now, what are your changes?
+
+<!-- xgd-turn id="c410f9f3-adc3-4bd5-b909-9f5c22a04f11-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T21:51:30.119Z" -->
+#### Claude
+All my changes this session are **site data**, not framework code — that's why `git diff` is empty (the whole `storage/sites/gigabytealchemy/` tree is untracked). Let me show you exactly what's in the draft vs. the base it started from.
+
+The base snapshot is empty, so that diff isn't the real story — the session's actual change log lives on the ticket. Let me pull it.
+
+Let me pull the ticket comments for the most recent session work (the commits at the top of the log are comment updates).
+
+Let me grab the top of that comment — it has the actual change list for this session.
+
+Here's the complete picture. **Every change I made is site data/config — no framework code was touched**, which is why `git diff` is empty and the only thing in `git status` is the untracked `storage/sites/gigabytealchemy/` tree.
+
+## What's on disk (the changes)
+
+All under `storage/sites/gigabytealchemy/draft/`:
+
+| File | What it is |
+|---|---|
+| `site.json` | The theme — palette (cream `#e8dfd3` bg, green `#0f9d6e` primary, gold `#fbba72` accent, dark-navy inverse surface), Cinzel display font registration, typography scale, spacing, breakpoints |
+| `pages/home.json` | The home page — 11 module instances (header, hero, 4 text-blocks, 2 services-grids, 2 contact-forms, footer), verbatim copy from the capture |
+| `assets/AlchemistLabWithTech.png` | Mirrored hero image |
+| `assets/cinzel.woff2` | Mirrored display font |
+
+## What those edits accomplished this session
+
+1. **Rendering unblocked** — once REQ-23's structured-list schema landed, all 11 modules render cleanly (previously 5 failed `validateSite`).
+2. **Hero/header legibility (config-only)** — set `surface: inverse` on hero and header so text is white/legible over the dark lab image instead of black-on-dark.
+3. **Cream band-stack color fixes** — the palette/surface tuning so the bands read as the reference's warm cream stack.
+
+These are pure site-definition dial changes — the kind that **don't need the free-coding UAT cycle** (no framework code, no `test_UAT_FC_*` tests). That's why nothing's committed yet.
+
+## What I deliberately did *not* do
+
+The remaining gaps to "indistinguishable" are **framework-capability gaps, not config** — and can't be fixed from site data without raw CSS (forbidden):
+- Hero heading white vs. reference **gold**
+- Wordmark left vs. **centered** (no `align` dial on `header`)
+- Building cards side-by-side vs. **stacked** (no stacked `services-grid` variant)
+
+Those are tracked as **REQ-24 / REQ-25 / REQ-26** (already filed) plus a few unfiled ones.
+
+---
+
+Two things are still awaiting your call from the last comment:
+1. **Commit the untracked config?** (site-data only, safe to commit without the UAT cycle)
+2. **File tickets for the newly-found framework gaps?** — the most valuable being the "`background` defeated by `surface`" finding, which will bite every band-stack site.
+
+Want me to do either?
+
+<!-- xgd-turn id="4f608ad7-7945-4a6d-80d5-cd55ba5091c5-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T21:51:52.081Z" -->
+#### You
+Go ahead with both
+
+<!-- xgd-turn id="4f608ad7-7945-4a6d-80d5-cd55ba5091c5-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T21:53:57.624Z" -->
+#### Claude
+On it. First let me see how REQ-24/25/26 were structured so the new gap tickets match, then file them and commit the config.
+
+The pattern is clear. Let me file the four framework-gap tickets. Starting with the highest-value one (`background` defeated by `surface`).
+
+Four tickets filed. Now let me commit the untracked site config. First let me see exactly what would be committed (excluding the screenshot/base artifacts if they're not meant to be tracked).
+
+Convention is clear: tracked sites include `.draft-base.json`, `draft/`, and `history.json` — but **not** stray review screenshots. I'll commit the site config and leave out `ours.desktop.png` (a comparison artifact) and the `.xgd/tickets/search/` embeddings index (a regenerable cache, unrelated to this work).
+
+Committed. Now let me record this session's outcome on REQ-20. Let me check the update interface so I append rather than overwrite.
+
+`--append-body-file` is exactly right. Let me append the session-close note to REQ-20.
+
+Both done.
+
+## 1. Config committed
+
+`6d7d92f` — `site(gigabytealchemy): add draft site definition for REQ-20 import`
+
+Committed the site data only: `.draft-base.json`, `draft/site.json`, `draft/pages/home.json`, mirrored `assets/` (hero PNG + `cinzel.woff2`), and `history.json`. Left out the `ours.desktop.png` comparison screenshot and the `.xgd/tickets/search/` embeddings cache (both regenerable, not site config). No `[FREE-CODED]` tag and no UAT cycle — this is config/content, not framework code, and we're on `xgd-working`.
+
+## 2. Framework-gap tickets filed
+
+| Ticket | Pri | Gap |
+|---|---|---|
+| **REQ-27** | high | `background` goes inert when `surface` is set — they don't compose. The root cause of the hero-legibility workaround, and it hits **every** band-stack site. |
+| **REQ-28** | med | `hero` heading colour/treatment dial (reference gold vs. our white). |
+| **REQ-29** | low | `header` content-alignment dial (centered wordmark). |
+| **REQ-30** | low | `services-grid` stacked full-width card variant. |
+
+## 3. REQ-20 updated
+
+Appended a "Session close" note to the ticket body (preserved everything above it) recording the commit and the four new tickets. The milestone stays **open** — desktop content reconstruction is done and committed, but "indistinguishable" is gated on REQ-24/25/26 + REQ-27/28/29/30 landing.
+
+The `ours.desktop.png` screenshot is still sitting untracked in the site dir if you want it for reference; say the word and I'll delete it or move it under `storage/references/`.
+
+<!-- xgd-turn id="86e59a39-4b87-45f5-9db1-404ea5ef12e1-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T22:32:42.100Z" -->
+#### You
+These are small changes - please use fewer reqs in future
+
+<!-- xgd-turn id="86e59a39-4b87-45f5-9db1-404ea5ef12e1-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-02T22:33:08.405Z" -->
+#### Claude
+Understood — noted for going forward: batch small, related capability gaps into one ticket rather than splitting each dial into its own REQ. Let me save that as a durable preference.
+
+Saved. Now — want me to clean up the four I just filed? My suggestion:
+
+- **Keep REQ-27 standalone** — it's a genuine rendering bug (`background`/`surface` not composing), cross-cutting, hits every band-stack site.
+- **Fold REQ-28 + 29 + 30 into one ticket** — "Small `hero`/`header`/`services-grid` dials for the gigabytealchemy import" with a three-item checklist — and archive those three.
+
+Say the word and I'll consolidate them that way (or a different split if you'd prefer, e.g. all four into one). Going forward I'll batch small sibling gaps into a single checklist ticket by default.
+
+<!-- xgd-turn id="d12c7468-10cf-4e2c-b494-a4036b79080b-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-02T22:35:28.704Z" -->
+#### You
+REQ-27 is in flight - can you implement 28 29 and 30 so we can leverage your context and not have to recreate for each ticket
+
+<!-- xgd-turn id="e1913067-e08d-4085-9b70-f125e4e7dca6-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-03T00:04:53.765739+00:00" -->
+#### You
+OK all your tickets are implemented can you take another pass at the site now?
+
+<!-- xgd-turn id="e1913067-e08d-4085-9b70-f125e4e7dca6-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-03T00:08:51.829190+00:00" -->
+#### Claude
+I'll re-render, snapshot my copy, and compare against the reference. Let me start by checking what's landed and getting a fresh render.
+
+Render is clean. Let me snapshot my copy and pull up the reference to compare, and check what actually landed across the recent tickets.
+
+Now let me look at both images side by side — my render and the reference capture.I've got a clear side-by-side now. Good progress since last session — the cream band-stack, the Cinzel gold wordmark, card badges/borders/checklists, and the header-over-image are all landing. But eyeballing the two, several deltas jump out. Let me inspect the config to see which are config-fixable before I judge.
+
+Config is clear. Before I judge what's config-fixable vs a framework gap, let me look at the hero and header module metas to see the available fields/dials.
+
+Now I understand the picture. Two findings stand out, one config and one a genuine framework bug:
+
+**Framework bug (not config-fixable):** the hero `subhead` is declared `type: 'markdown'` in its schema, but `index.astro` renders `{subhead}` as a raw string — so the `\n\n` paragraph break between "Tools for clarity, presence, and positive connection" and the body paragraph is collapsed. That's why my hero copy is a cramped run-on blob overlapping the candles, while the reference has a clean subhead-line / body-paragraph hierarchy. This will bite any hero with a multi-paragraph subhead.
+
+**Config-fixable:** the header wordmark. Let me make the one clean config change and re-verify.
+
+First, the header alignment — I want to flag this because it contradicts last session's assumption. Looking at the actual capture, the reference wordmark is **left-aligned** (the "G" sits at the same left margin as "Intentional Software" and "A Different Approach" below it). Last session set it to `center` on the belief the reference was centered. My eyes on the capture say left. Let me correct it to match the reference:
+
+Now re-render and re-shoot to see the header change and get a fresh full-page comparison:The header wordmark is now left-aligned and matches the reference position. That was the one clean config win available this pass. Let me quickly check whether the footer year is dynamic (mine shows "© 2026", the capture shows "2025") so my report is accurate:
+
+Confirmed — the footer year is `BUILD_YEAR` (auto-generated → 2026), so the "2026 vs 2025" difference is dynamic, not a content miss. Nothing to fix there.
+
+Here's my honest read of this pass.
+
+## What I changed this pass
+- **Header wordmark → left-aligned** (config only). Last session set it `center` believing the reference was centered; looking at the actual capture, the wordmark sits at the **left margin** (same as "Intentional Software" and "A Different Approach" below it). I corrected it to match. Flag for you: this reverses REQ-28's alignment decision — if you deliberately preferred centered, say so and I'll flip it back, but the capture is unambiguously left.
+
+## What's now landing well
+Cinzel gold wordmark, header composited over the lab image, cream/darker-cream alternating bands (REQ-27), card accent borders + status badges + ✓ checklists (REQ-26), gold hero heading. The band-stack body is close to indistinguishable.
+
+## The one thing that still looks broken — and it's a genuine framework bug
+The **hero copy is a cramped run-on blob** overlapping the bright candles/laptop, where the reference has a clean two-tier hierarchy: a prominent subhead line ("Tools for clarity, presence, and positive connection") then a smaller body paragraph.
+
+Root cause: `hero/index.astro` renders `{subhead}` as a **raw string**, even though the content schema declares `subhead` as `type: 'markdown'`. So the `\n\n` paragraph break in the content is collapsed. `text-block` renders its markdown body correctly; the hero doesn't. This isn't config-fixable and it will bite any hero with a multi-paragraph subhead.
+
+## Remaining deltas, categorized
+| Delta | Kind | Note |
+|---|---|---|
+| Hero subhead run-on (above) | **Framework bug** | Highest visual impact; render subhead as markdown |
+| Hero text collides with bright image region | Framework | Reference band is taller / text over darker zone; may want a scrim or min-height |
+| Forms stacked vs side-by-side (gap #5) | Framework | Never filed; needs a two-column layout capability |
+| "Coming soon" badge grey vs light-blue; XGD border green vs blue | Framework | Minor treatment/color |
+| Callouts + "Exploring" light-blue card + narrow column (gap #4) | Accepted as-is | Your earlier call |
+| Footer year/order | Dynamic | Not a real miss |
+
+## Recommendation
+Per your "fewer REQs" steer, I'd batch the **hero fixes into one ticket** — "Hero: render markdown subhead + legibility over busy imagery" — since they're the same region and the same visual goal. The side-by-side forms are a genuinely separate capability, so that's a second ticket if you want it (or accept-as-is for now like gap #4).
+
+I haven't created any ticket or touched framework code — the session's scoped to REQ-20 and you asked me to keep ticket count down. Want me to file that one hero ticket and implement it (free-coding cycle), and separately decide on the forms? Or fold forms in too?
+
+<!-- xgd-turn id="afc503cc-b06f-4d95-b09d-a1f101570955-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-03T00:22:59.698792+00:00" -->
+#### You
+It's looking more and more similar I agree but there are still some important differences. An explicit part of the original design was that the hero image background would fill the screen to the fold. And your version it does not.  The title gigabyte alchemy at the top of the site is significantly smaller.
+
+The changes lower down are less important. You chose to put the what we're exploring section in open text rather than in a panel I'm not sure why I think would work either way.
+
+In my version the get in touch section has two areas next to each other one for joining the email list the other for sending in a question in your version they follow each other in a centered column which doesn't give the same kind of visual separation. Although I met the original is a little janky anyway.
+
+I do care about the justification of the copyright statements and the links at the bottom. I am gently allergic to sent text in general. But actually that's less important than can you lay it out the way we have it
 
 <!-- xgd-chat-end -->
