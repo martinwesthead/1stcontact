@@ -5,7 +5,7 @@ type: request
 title: 'Milestone: indistinguishable import of faelan.com (import-fidelity benchmark)'
 created_by: xgd
 created_at: '2026-07-02T00:32:00.430097+00:00'
-updated_at: '2026-07-03T20:26:15.653416+00:00'
+updated_at: '2026-07-03T23:38:11.516076+00:00'
 completed_at: null
 last_field_updated: body
 status: draft
@@ -78,3 +78,23 @@ Captured a fresh original (`1c shot --url https://faelan.com/`) and the reproduc
 3. **Photo edge feather** — my photos were over-softened (fixed 55% mask stop feathering the outer ~45%) vs the original's crisper 70–75%. Closed by implementing the deferred **`imageTreatment.feather`** control ([[REQ-32]] cap 5, free_coded v0.0.35) and setting the soft photos to `feather: md` (~70%).
 
 After the fixes, desktop and mobile both read as indistinguishable from the original. `values-diff` still 6 matched with only the two known non-fidelity residuals (footer build-year `2026` vs hard-coded `2025`; overlay false-negative — it renders identically `#000000 @ 0.3`).
+
+
+### Pixel-diff pass (commit 898d0ce) — montage now pixel-faithful
+
+Drove fidelity with a per-pixel diff harness (mine vs live faelan.com, 1280×800). Whole-page mean diff **20.5 → 3.3 / 255**; pixels differing >20% **23% → 2%**. Root causes found and fixed (all layer-primitive generalizations under [[REQ-32]] cap 5, free_coded v0.0.36):
+
+- **Circle was an ellipse** — the hover-motion wrapper collapsed the image's `height:100%`; made motion transparent to sizing + `shape:circle → aspect-ratio:1`.
+- **Photos mis-registered** — layer children rotated about `top left`; switched to `transform-origin: center` (the CSS default the original relies on). Biggest single gain.
+- **Halos around photos** — soft-mask was a farthest-corner ellipse; now box-sized `ellipse 92% 92%` matching the original, feather stops retuned.
+- **Wordmark sat high** — added `typography.leading` so a positioned run controls its box height.
+- Config: exact photo widths, circle x 72.5, drop circle explicit height.
+
+Remaining residuals (visually indistinguishable to the eye): the about band's hero heading→subhead rhythm (~11px, shared-module — left alone to avoid regressing other sites), a faint circle border/glow ring, footer build-year (`2026` vs `2025`), and high-frequency AA on the detailed rotated photos.
+
+
+### Cross-browser subline drift — diagnosed + fixed (commit d4fd3f7)
+
+The "Artist • Musician • Creator" subline sat a line low in Safari/Firefox but not Chrome. **Not an engine bug** — it was **viewport-height dependence**: the montage band is `100vh` and the wordmark (`top:8%`) + subline (`top:21%`) were separate children, so their gap = `~13% × viewport-height` (glued at 800px, a full line apart at ~1080px — Safari/Firefox windows are taller than the Chrome window). All three engines agree at a fixed height.
+
+Fix (framework, [[REQ-32]] cap 5, free_coded v0.0.39): layer text child gains `lines: [{ text, typography? }]` — a **titled block** that flows the lines in one positioned block with a fixed gap. faelan's wordmark + subline merged into one `lines` child. Verified the wordmark→subline gap is a constant **8px across viewport heights 700–1080 in Chromium, WebKit, and Firefox**; `1c diff` unchanged at the reference (mean 2.71, montage clean).
