@@ -5,7 +5,7 @@ type: comment
 title: Comment on request REQ-48
 created_by: xgd
 created_at: '2026-07-07T03:01:48.744184+00:00'
-updated_at: '2026-07-07T05:19:08.563525+00:00'
+updated_at: '2026-07-07T19:05:55.097601+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -399,5 +399,178 @@ Eleven commits, one per axis, each `[FREE-CODED]` with `test_UAT_FC_REQ-48_*` UA
 - **Item 6's WebKit/Gecko binaries were not installed** (`playwright install webkit firefox` is a permissioned install I didn't run). The code degrades cleanly via `engineAvailable()` and runs in CI once engines are provisioned — no dependency change this session.
 
 The unrelated `storage/gigabytealchemy/*` working-tree edits from session start were left untouched in every commit.
+
+<!-- xgd-turn id="b0e86e71-fdff-4143-a200-be20402d7dc6-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-07T17:07:47.301693+00:00" -->
+#### You
+Is this complete?
+
+<!-- xgd-turn id="b0e86e71-fdff-4143-a200-be20402d7dc6-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-07T17:08:26.218407+00:00" -->
+#### Claude
+I'll verify the actual current state rather than answer from memory — let me check the ticket and git.
+
+Yes — the coding work is complete and correctly landed. I verified the actual state:
+
+**Ticket REQ-48** → `status=free_coded`, version `0.0.59`, all **11 commits recorded** in `fields.commits`, and all 11 are reachable from `HEAD` (`xgd-working`). The body is intact (original scope preserved).
+
+| Item | Commit | Axis |
+|---|---|---|
+| 9 | `0805f9c` | ignore-masks (year fold + `--ignore`) |
+| 8a | `def1504` | systemic sub-threshold aggregation |
+| 8b | `b73ecc6` | perceptual ΔE (OKLab) |
+| 2 | `a8eae22` | z-order paint axis |
+| 3 | `78d20ce` | treatments (mask/filter/text-shadow) |
+| 4 | `29e80bc` | media + capture descends into children |
+| 5 | `b63e9e8` | multi-viewport precondition + overflow |
+| 7 | `6ef4c9a` | web-font load / FOUT |
+| 1 | `a0d7e63` | motion — transforms + reduced-motion freeze |
+| 11 | `afb8f25` | anti-self-grading calibration |
+| 6 | `2a2a7ba` | cross-engine driver seam |
+
+Each shipped `[FREE-CODED]` with `test_UAT_FC_REQ-48_*` UATs; the prior session's final run was 252 tests green, `tools/generate` tsc clean.
+
+**Two honest caveats** (documented on the ticket, not gaps in the landed code):
+1. **Item 6** — the WebKit/Gecko *binaries* were never installed (`playwright install webkit firefox` is a permissioned install I didn't run). The driver code degrades cleanly via `engineAvailable()` and runs cross-engine in CI once binaries are provisioned.
+2. **Diff-level vs capture-orchestration** — for items 1 and 5, the *preconditions, tolerances, and multi-engine seam* are in the diff engine, but the full `:hover` actuation and per-viewport/per-engine *capture loop* (multi-state bundle capture) are noted as follow-on capture orchestration, not implemented this session.
+
+**What's left is not code — it's your decision:** the ticket is parked at `free_coded`, the stable resting state. Nothing auto-fires from here. When you're satisfied the fidelity gate behaves on real benchmarks, promote it to `ready_to_reconcile` and the dispatcher will fold these 11 commits into the capability matrix. That promotion is your call, not mine.
+
+So: complete as a free-coded landing. Want me to do anything else — exercise the gate against a live benchmark (faelan/gigabytealchemy), or address either caveat?
+
+<!-- xgd-turn id="10da2799-af11-471f-8e8f-4f2306080f24-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-07T17:09:45.555975+00:00" -->
+#### You
+I just ran the install for you.
+
+the full `:hover` actuation and per-viewport/per-engine *capture loop* (multi-state bundle capture) are noted as follow-on capture orchestration, not implemented this session. <-- can you do these now?
+
+<!-- xgd-turn id="10da2799-af11-471f-8e8f-4f2306080f24-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-07T17:15:57.151597+00:00" -->
+#### Claude
+Let me map the capture architecture before writing code. I'll look at what the recent commits touched and find the capture module.
+
+Let me read the core capture orchestration files — the driver, capture entry, index, and types.
+
+Now let me read the pipeline, extract, and types to understand the capture flow and the multi-state seams already present.
+
+Now let me read the extract script, values-diff (viewport/engine helpers), bundle, and the REQ-48 test file to see the seams and testing conventions.
+
+Now let me read the values-diff (viewport/engine/overflow helpers) and the existing REQ-48 test file.
+
+Let me look at how existing capture tests build a fake driver, so my orchestration tests follow the same convention.
+
+Let me read the flatten functions and the diff entry signature to wire the orchestration cleanly.
+
+I have a full picture. This is a coherent capture-orchestration delivery: (1) a driver `actuate()` seam + Playwright CDP implementation for `:hover`/`:focus`/`:active`, and (2) a `runMultiStateCapture` loop over engine × viewport × interaction-state producing tagged manifests, persisted to the bundle, with a `diffMultiState` pairing on the diff side. Let me track it and implement.
+
+Now let me implement. First, the seam in `types.ts` — move `RenderEngine`, add `InteractionState`, add `actuate()`.
+
+Now the Playwright driver: use `RenderEngine`/`InteractionState` from types, and implement `actuate()` via CDP.
+
+Now add the `actuate()` implementation after `screenshot()`:
+
+Add the `CdpNode` shape used by the CDP walk:
+
+Add `canActuate()` to the seam so the loop can tell real actuation from a no-op engine:
+
+Now the diff side. Let me check the values-diff imports, then add prov
+
+<!-- xgd-turn id="1817d8ae-07d7-486f-b22d-08c15611ca84-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-07T18:58:17.466314+00:00" -->
+#### You
+Please make sure all your changes are complete and commited and you have followed the free coding protocol
+
+<!-- xgd-turn id="1817d8ae-07d7-486f-b22d-08c15611ca84-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-07T19:05:55.067300+00:00" -->
+#### Claude
+I'm mid-implementation. Let me finish the diff side, the capture loop, persistence, exports, tests, then commit. First check values-diff imports.
+
+Now add the imports, `ValueManifest` provenance, and the multi-state types + `diffMultiState`. First the imports:
+
+Now add `engine`/`state` provenance to `ValueManifest`:
+
+Now add `diffMultiState` after `diffManifests`. Let me find where it ends.
+
+diffManifests ends the file. Append `diffMultiState`:
+
+Now add the multi-state loop to `pipeline.ts`. First, add `notes` to `MultiStateCapture`:
+
+Now append the multi-state orchestration to `pipeline.ts`:
+
+Now bundle persistence in `bundle.ts`:
+
+Now the exports in `index.ts`:
+
+Let me typecheck before writing tests.
+
+tsc clean. Now let me read the test file's imports and a couple of existing tests to match conventions, then add the new UATs.
+
+tsc is clean. Now let me add the UATs. First extend the test imports:
+
+Now append the UAT block. Let me check the end of the test file:
+
+Let me confirm the `box()` helper signature so my new tests reuse it:
+
+Now append the new UAT block covering multi-state orchestration and `diffMultiState`:
+
+Now typecheck and run the REQ-48 test file:
+
+53 passing (+7 new). Now the full suite to confirm nothing regressed:
+
+Full suite green (392 passing), tsc clean. Now the free-coding protocol: I need the version bump. Let me see how prior REQ-48 commits handled it and the version-bump interface.
+
+Each commit bumps patch. Let me run the documented version-bump script (0.0.59 → 0.0.60):
+
+Now let me check lint and then commit. First see the changed files and whether there's a lint step:
+
+Note: `playwright-driver.ts` and `types.ts` showed as modified at session start (pre-existing uncommitted edits). Let me review the full diff of both to ensure everything staged is intentional REQ-48 work and nothing stale gets swept in.
+
+The entire diff is coherent REQ-48 multi-state work I authored — nothing stale or foreign. Let me commit following the free-coding convention:
+
+Now free-coding steps 4-5: record the commit on the ticket and refresh the body. Let me find the right CLI command.
+
+The ticket is already free_coded; `move-to-free-coded` is the gate that validates the version bump and records the commit. Let me run it with the new SHA and version:
+
+I must pass all prior SHAs plus the new one (it's a superset replace). Let me provide the full list:
+
+Now step 5 — append a delivery note to the body documenting this follow-on (preserving existing content via `append`):
+
+Let me verify the final state — ticket, commits, and clean working tree:
+
+Done. Both follow-on capture-orchestration pieces are implemented, tested, committed, and the free-coding protocol is fully satisfied.
+
+## What shipped (commit `22446c3`, `[FREE-CODED]`)
+
+**1. Full `:hover` / `:focus` / `:active` actuation**
+- `BrowserDriver.actuate(state)` + `canActuate()` added to the seam; `RenderEngine` and a new `InteractionState` moved to the pure type surface.
+- `PlaywrightDriver.actuate()` forces the pseudo-state across the whole DOM via CDP `CSS.forcePseudoState`. It's Blink-only, applied **symmetrically** to reference and repro (so a hover-scale in one and not the other still surfaces as a real geometry delta), single-pass, and deterministic under the existing `reducedMotion` context. `rest` clears.
+
+**2. Per-viewport / per-engine capture loop (multi-state bundle capture)**
+- `runMultiStateCapture()` loops `engine × viewport × interaction-state` — one navigation per `{engine, viewport}`, states actuated on the open page — emitting `ValueManifest`s tagged with full provenance.
+- `diffMultiState()` pairs reference↔repro **cell-for-cell** on `{engine, width, state}`, so hover is diffed hover↔hover and a mobile reflow 375↔375; a missing cell is surfaced, not counted clean.
+- Unavailable engines and non-actuating drivers are held back and **noted** — no silent coverage gaps (per CLAUDE.md).
+- Bundle persistence: `writeMultiState`/`readMultiState` (`multistate.json`), honouring item-10 re-capture discipline.
+
+## Verification
+- **tsc clean**, **full suite 392 green** (7 new `test_UAT_FC_REQ-48_*`: loop coverage, hover geometry feed-through, hold-to-rest, engine skip, `diffMultiState` localization + missing-cell).
+
+## Free-coding protocol ✓
+- Scope ticket: REQ-48 (existing session ticket — no new ticket created).
+- Version bumped 0.0.59 → **0.0.60** via `bin/project/xgd_version_bump`.
+- Committed with `[FREE-CODED]` + `Co-Authored-By`.
+- `move-to-free-coded` recorded the SHA (now **12 commits**, version 0.0.60, status `free_coded`).
+- Ticket body updated with a delivery note (existing content preserved via `append`).
+- Working tree clean.
+
+I verified against the system rather than reporting from memory: I checked the diff was entirely coherent REQ-48 work (the two files flagged modified at session start were the beginning of this same work, nothing stale), confirmed the commit count and version on the ticket, and confirmed a clean tree.
+
+One honest note carried over from before: the CDP actuation path itself isn't exercised by an end-to-end browser test (the UATs drive it through a fake driver, as the rest of the capture suite does) — it will first run against a real page during an actual reference capture.
 
 <!-- xgd-chat-end -->

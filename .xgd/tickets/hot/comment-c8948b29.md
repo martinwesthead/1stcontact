@@ -5,7 +5,7 @@ type: comment
 title: Comment on request REQ-36
 created_by: xgd
 created_at: '2026-07-03T18:02:32.195837+00:00'
-updated_at: '2026-07-03T18:26:07.005302+00:00'
+updated_at: '2026-07-08T15:31:15.719929+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -260,5 +260,201 @@ The 112 size/weight/line-height deltas are a bigger, separate effort (per-elemen
 **These are framework code changes, so they go through the full free-coding ceremony** (UATs named `test_UAT_FC_*`, `[FREE-CODED]` commit, version bump), and per the project's "generalize before adding" rule they'd likely be their own capability tickets against REQ-32 rather than folded into REQ-36. That's a real chunk of work — **want me to proceed with #1–#3 (the visual wins) under free-coding?** I'd start with the gold-heading generalization.
 
 Full enumeration + verdict is saved on REQ-36 (COMMENT-39).
+
+<!-- xgd-turn id="70724186-c272-48aa-8297-a5244b777d07-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-07T22:29:48.614460+00:00" -->
+#### You
+ok please read DOC-19 again there are more tools and process. I have deleted your previous attempt. Can you take a pass at the most faithful reproduction you can of 
+
+https://joyfulculinarycreations.com/
+
+PLease use all the diff tools and be sure to compare the final results before declaring victory
+
+<!-- xgd-turn id="70724186-c272-48aa-8297-a5244b777d07-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-07T22:45:00.608336+00:00" -->
+#### Claude
+I'll re-read DOC-19 carefully and get the lay of the land. Let me start with reconnaissance in parallel.
+
+The capture bundle is intact; my prior sandbox attempt was deleted as expected. The key thing I notice: last session I **never ran the perceptual `1c diff` gate** — I declared a ceiling from `values-diff` alone. DOC-19 is explicit that `1c diff` (overlay reading) is the gate that catches what values-diff is blind to. Let me do this properly this time.
+
+Let me scaffold fresh and launch parallel investigation to build a compact working reference.
+
+Scaffold is ready. While the framework-mapping agent runs, let me study the worked example and the capture structure myself.
+
+The capture has a full per-element value manifest — exactly what `values-diff` compares against. Let me dump the complete content inventory to drive transcription.
+
+Now I have the ground-truth value manifest. Let me view the screenshot to establish section structure (the capture collapsed to 1 band, so the screenshot + raw.html are my structure source).That gives me the full structure. Now let me establish exact band background colors and geometry from the Elementor CSS (the screenshot shows medium-grey bands and a sage-green testimonial panel — I need the real hex values, not eyeballed).
+
+I now have the full framework vocabulary and verified band colors:
+- Grey bands `#7A7A7A` (Who Uses / Offerings / Process) → `surfaceInverse`
+- Green testimonial `#28542D9E` (~62% α)
+- Quote scrim `#141E14BA` over `market-vegetables` photo
+- Hero: `HERO-AdobeStock` image at 0.49 opacity over black
+
+Let me check the font assets and a couple remaining values before writing the theme.
+
+Font weights confirmed (Oswald 200 is the heading weight — light). I have enough to build. Let me stop analyzing and start building — the diff tools will drive the rest. Let me set up tracking and gather the assets I need.
+
+I have the key images (hero, quote, logo) and fonts. The 3 "offering" boxes render as empty grey in the capture screenshot, so omitting images there actually matches the reference better. Let me copy assets into the sandbox and set up tracking.
+
+Now let me write the theme (`site.json`), transcribing exact captured values.
+
+Now let me look at the scaffold's page format and the gigabytealchemy home.json as a worked reference for module instance shape.
+
+I have the module shape. I need the full untruncated text for all runs. Let me dump them cleanly.
+
+All text captured. Now let me write the full 9-band page.
+
+Now let me render the first draft and catch any schema errors.
+
+Rendered cleanly. Now let me run **both** gates — the perceptual `1c diff` (which I skipped last time) and `values-diff` — plus a screenshot to eyeball.
+
+Let me capture the values-diff to a file cleanly and view the draft screenshot.
+
+142 deltas, 54 matched. Let me view the draft render and run the perceptual gate.Now I can see the draft. The perceptual view immediately reveals what `values-diff` alone would never surface. Big issues visible:
+1. **Hero heading renders pink** (should be white) + **CTA pink** (should be gold)
+2. **Gold section headings render dark/white** (text-block/services-grid have no gold treatment)
+3. **services-grid cards are empty white boxes** — white-on-white (content invisible)
+4. **Testimonials band grey** (should be green)
+
+Let me run the perceptual gate for ranked regions, and investigate the hero/grid rendering code in parallel.
+
+Perceptual mean is **66/255** — very high. Ranked regions confirm the eyeball: #1 & #3 & #4 are the empty white services-grid boxes, #2 is the hero. Let me investigate whether the hero colors and card rendering are config-fixable vs framework gaps before deciding scope.
+
+The hero `treatment-plain` inherits `surface-inverse` color = white (per CSS), yet the screenshot looked pink — and the CTA is `--color-primary` (pink). Let me read the hero region overlay triptych to see the actual rendered colors (DOC-19: read the overlay, don't eyeball the full shot).
+
+Good — the hero heading is actually **white** (I misread the downscaled full shot); the CTA is a full-width pink bar. Let me compare against the reference hero to calibrate precisely.
+
+Now the comparison is precise. Reference hero: darker image, **uppercase** heading, a divider rule, small **gold** button. Ours: lighter scrim, mixed-case, full-width **pink** bar. Let me check the hero inner structure (why the CTA is full-width) then apply config fixes.
+
+The full-width CTA is because `.hero__inner` is `flex-direction: column` with default `align-items: stretch` — the button stretches. That's framework behavior. I now have a complete picture. Let me apply the pure-config wins (gold CTA via primary swap, stronger scrim) and re-measure to establish the honest config ceiling.
+
+Config-only tops out at **64.57/255** (from 66.19) — marginal, because the dominant regions are all framework-blocked. This is the honest config ceiling, and per your instruction I'm **not** declaring victory. Let me record the diff-driven findings on the ticket, then lay out the decision.
+
+I've done the diff-driven rebuild you asked for. Here's where it stands — and the decision I need from you before I keep going.
+
+## What I did differently this time
+Fresh sandbox build from the capture (theme + 9 bands), then ran **both** gates — including the perceptual `1c diff` with **overlay reading**, which I skipped entirely last time and which is the whole point of DOC-19. Reading the region triptychs (not the downscaled full shot) immediately caught things `values-diff` is blind to.
+
+## Honest measured state (not victory)
+- **`1c diff` perceptual mean: 64.57 / 255** — faelan-grade is ~2–3, so this is far off.
+- **`values-diff`: 54 matched / 142 deltas.**
+
+Config wins are already in: gold CTA (gold=primary swap), strong scrim, exact band colours (`#7a7a7a` grey bands, `#28542d` green, gold footer), all four fonts loaded, verbatim text.
+
+## Why config is exhausted — overlay-confirmed, ranked by region score
+| Region | What the overlay shows | Blocker |
+|---|---|---|
+| #1 / #3 / #4 (largest) | Offerings + Process render as **empty white boxes** | services-grid draws white cards on the dark band → white-on-white |
+| #2 (hero) | heading mixed-case not **UPPERCASE**; no divider; CTA stretches full-width | framework |
+| pervasive | every gold section heading renders dark/white | text-block & services-grid have no gold `headingTreatment` |
+| testimonials | grey not green | no green surface value |
+
+Every remaining big lever is a **framework code change**, not config. Per the generalize-first rule they're all generalizations of existing modules:
+
+1. **`headingTreatment: gold`** on text-block + services-grid (generalize hero's existing dial) — the pervasive gold-heading signal.
+2. **Bare/transparent card surface** on services-grid — makes Offerings/Process render as text-columns on the dark band. **Closes the three highest-scoring regions.**
+3. **Uppercase heading treatment** — author uppercases via CSS; keeps DOM text mixed so `values-diff` stays clean.
+4. **Green surface** for the testimonial band.
+
+## The decision I need
+Each of these is framework `xgd_source`/`packages` code → **mandatory free-coding ceremony** (scope ticket + `test_UAT_FC_*` UATs + `[FREE-CODED]` + version bump). They're reusable framework capabilities, so per the model they belong on **framework capability tickets** (the docs point to REQ-32), **not** folded into REQ-36 (which is the site reproduction).
+
+**I can't cleanly create those tickets or touch framework code without your say-so.** How do you want to proceed?
+
+- **(A)** I create capability tickets (against/near REQ-32) and free-code them, biggest-win-first (#2 bare cards + #1 gold headings first — they clear the top regions), re-diffing after each until the mean drops, then verify final. *Recommended.*
+- **(B)** You'd rather I fold the framework changes into REQ-36 as one bundle (simpler ticketing, less "correct" per the intent model).
+- **(C)** Stay config-only — accept ~64/255 and I document the gaps as the reproduction's honest ceiling.
+
+Findings are recorded on REQ-36 (COMMENT-59). Which option?
+
+<!-- xgd-turn id="71d07810-264e-4904-8e42-e296e920a9fe-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T15:28:35.418030+00:00" -->
+#### You
+What I want to do is figure out how to turn this into a process. From my point of view I think it would be cleaner if framework changes stayed in this ticket.
+
+I want to discuss when you create new modules vs adding dials to existing ones (I see failure cases in both directions)
+
+I also need due process around tests we now have a conformance test harness we need to work through the testing requirements for modules
+
+<!-- xgd-turn id="71d07810-264e-4904-8e42-e296e920a9fe-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-08T15:31:15.689574+00:00" -->
+#### Claude
+This is a shift from "finish the repro" to "make it a repeatable process." Good — three threads: (1) framework changes stay in REQ-36 (agreed), (2) module-vs-dial decision procedure, (3) test due-process against the conformance harness. Before I talk about testing I should actually look at what the harness is rather than theorize. Let me investigate.
+
+The harness is REQ-39/DOC-20: `assertModuleConforms(slug, fixtures)` — renders each fixture as a one-module page and checks safety/security/responsive dimensions, with negative fixtures proving the discriminator works. Let me read DOC-20 and how existing modules wire into it.
+
+Let me see how an existing module wires into this — the per-module test pattern the user wants to standardize.
+
+Good — that reframes the work. I dug into the harness so I can talk concretely. Here's what's actually on disk:
+
+- **Conformance harness exists** (`tools/generate/src/conformance/`, REQ-39/DOC-20): `assertModuleConforms(slug, fixtures, opts)` renders each fixture as a one-module page, serves it, drives Chromium, checks **safety / security / responsive / x-browser**. Tiers `fast` (chromium, 1280+375) / `full`. Negative fixtures prove the discriminator discriminates.
+- **Gap:** it's only exercised by the REQ-39/40/41 harness tests (with injected broken modules + a text-block baseline). **No module has its own conformance leaf**, and there's **no correctness dimension** — it proves "nothing broke," not "gold is actually gold."
+
+Let me take your three threads in turn.
+
+## 1. Scope: framework changes in REQ-36
+Agreed, and it's clean *if* REQ-36's body declares the framework-capability scope before I touch code (free-coding needs the behaviour described first). I'll fold that in once we lock the process below.
+
+## 2. When a new module vs. a dial/variant
+
+The failure modes you're seeing, named so we can detect them:
+
+| Direction | Failure | Detectable smell |
+|---|---|---|
+| Over-dialing (god-module) | one module grows two behaviours behind a mode flag | a dial only valid when *another* dial has a certain value; render branches on `variant && dial` combos; a content field only read in one variant |
+| Over-modularizing (fragmentation) | a module per section shape | two modules share ~80% of template/CSS; capability split across 3 modules so users hunt for it; catalog grows faster than the concept count |
+
+Decision procedure (first match wins):
+
+1. **Same communicative job, different look → dial or variant.** Presents heading+prose, or presents N cards — same job → treatment.
+   - **Variant** = discrete *structural* preset; the template branches (three-col/two-col/stacked, top-nav/overlay). Closed, few, mutually exclusive.
+   - **Dial** = *orthogonal* modifier that must compose with **every** variant and every other dial (surface, size, spacing, headingTreatment, gap).
+2. **Different content question → module** (nav vs. testimonial carousel vs. contact form).
+3. **Cross-cutting composition several modules share → shared primitive** (the `fc-row`, the overlay band) — not a module, not a per-module dial.
+
+The load-bearing guardrail against over-dialing is a **composability invariant**: every dial value must be legal with every variant and every other dial. The moment "dial X only means something when Y" appears, you've got two jobs → split, or make it a variant.
+
+Applying it to our four changes:
+
+| Change | Verdict | Note |
+|---|---|---|
+| gold `headingTreatment` on text-block + services-grid | **dial** (generalize hero's) | composes cleanly ✓ |
+| bare/transparent card | **per-card dial** `surface: bare` | need to decide: does "bare + badge + accent-border" compose, or is bare mutually exclusive with card chrome? |
+| uppercase headings | **dial** `case`/`transform` | orthogonal, composes with everything ✓ |
+| green testimonial band | **neither a color-named surface nor a new module** | see below |
+
+The green case is the interesting one and I think it's a *trap in both directions*. Adding `surface: green` fragments the enum (every site's brand hue becomes a new surface value) — that's fragmentation-by-enum. But not supporting a distinct panel colour under-serves. The right resolution is to generalize the **mechanism**: surfaces already map to semantic tokens (default→bg, inverse→surface-inverse, accent→accent). The green panel is just *a second panel role*. So either surface takes a **palette role** (role-driven surface) or we add one generic `surface-panel` role the theme colours per-site — green here, something else next site. That keeps the framework hue-agnostic.
+
+**Open question for you:** on the bare card — is `bare` a card *surface value* that's mutually exclusive with badge/accent chrome (simplest, and I'd argue "bare" means "no chrome" so badges don't apply), or do you want them to compose?
+
+## 3. Testing due-process for module changes
+
+What the harness gives us free (once wired) vs. what's missing:
+
+- ✅ safety / security / responsive / x-browser — universal, per fixture.
+- ❌ **correctness** — that a dial produces its intended effect. `headingTreatment:gold` passing conformance only proves it didn't overflow or XSS, not that it's gold.
+- ❌ **matrix coverage** — nothing fails when a module adds a variant/dial with no fixture.
+
+Proposed requirements for any module add/change (the process):
+
+1. **Conformance leaf per module** — colocated `modules/<m>/<m>.conformance.test.ts` calling `assertModuleConforms`, fixtures covering **each variant once + each non-default dial value once + the new capability's combination**. Backfill the 7 existing modules.
+2. **Effect assertion** — a computed-style probe proving the dial *changed the output the intended way* (`getComputedStyle(heading).color === accent token` for `gold`). Also guards the silent-no-op failure mode (a dial that does nothing).
+3. **Default-vs-set pair** — prove the dial has an effect by asserting the pair differs.
+4. **UAT naming** `test_UAT_FC_REQ-36_*`.
+5. **The `1c diff` repro gate stays the integration-level truth** — conformance is per-module correctness; the repro mean is the whole-page eye test.
+
+Decisions I need from you to turn this into the process:
+
+- **(a)** Correctness: extend the conformance harness with an **expectation-probe dimension** (fixtures carry `expect: {selector, prop, equals}`), or keep correctness as **separate colocated unit tests** and leave the harness to safety/security/responsive? I lean toward adding the dimension — one call, one place.
+- **(b)** Coverage: build a **completeness gate** (module meta enumerates variants/dials → a test fails if any lacks a fixture), or trust author discipline?
+- **(c)** Location: **colocated** per-module test files (my recommendation, matches "test by module"), or centralized under `tests/`?
+- **(d)** Tier policy: leaves run `fast` in CI, `full` (all engines + responsive ladder) in regression only?
+
+If you answer (a)–(d) plus the bare-card composability question, I'll write it up as a short module-testing standard, put the framework-scope + test plan into REQ-36's body, and then start free-coding the four generalizations biggest-win-first — re-diffing after each.
 
 <!-- xgd-chat-end -->

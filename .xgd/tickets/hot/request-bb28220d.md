@@ -7,10 +7,10 @@ title: 'Fidelity gate: extend beyond the static single-state frame — motion/in
   to REQ-47)'
 created_by: xgd
 created_at: '2026-07-07T02:57:33.983265+00:00'
-updated_at: '2026-07-07T05:18:24.153515+00:00'
+updated_at: '2026-07-07T19:10:09.186367+00:00'
 completed_at: null
 last_field_updated: status
-status: free_coded
+status: ready_to_reconcile
 fields:
   priority: high
   story_points: 13
@@ -50,7 +50,10 @@ fields:
   - working_sha: 2a2a7ba8973221250a6b44d35abe14e9a66aea87
     reconcile_sha: null
     main_sha: null
-  version: 0.0.59
+  - working_sha: 22446c3a8dea55fc8ff0af3c407142775531cff3
+    reconcile_sha: null
+    main_sha: null
+  version: 0.0.60
 ---
 
 ## Scope
