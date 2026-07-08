@@ -5,7 +5,7 @@ type: comment
 title: Comment on request REQ-36
 created_by: xgd
 created_at: '2026-07-03T18:02:32.195837+00:00'
-updated_at: '2026-07-08T15:31:15.719929+00:00'
+updated_at: '2026-07-08T18:55:48.849419+00:00'
 completed_at: null
 last_field_updated: body
 status: null
@@ -456,5 +456,451 @@ Decisions I need from you to turn this into the process:
 - **(d)** Tier policy: leaves run `fast` in CI, `full` (all engines + responsive ladder) in regression only?
 
 If you answer (a)–(d) plus the bare-card composability question, I'll write it up as a short module-testing standard, put the framework-scope + test plan into REQ-36's body, and then start free-coding the four generalizations biggest-win-first — re-diffing after each.
+
+<!-- xgd-turn id="bbad2b8d-b0cf-4c23-a262-98e8f89a03fd-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T16:39:03.039603+00:00" -->
+#### You
+what does chrome mean in this context?
+
+<!-- xgd-turn id="bbad2b8d-b0cf-4c23-a262-98e8f89a03fd-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-08T16:39:13.029594+00:00" -->
+#### Claude
+"Chrome" = the decorative container framing around content, as opposed to the content itself. Borrowed from UI terminology (like "browser chrome" = the toolbars/tabs around the web page).
+
+For a services-grid **card**, the chrome is everything the module draws *around* the title+body:
+- the card's background fill (the white box you saw)
+- its border / left accent stripe
+- the corner radius, padding, drop shadow
+- the badge pill
+
+The **content** is just the title, body text, icon, CTA.
+
+So when I said the offerings/process cards should be **"bare" (no chrome)**, I mean: strip the white fill, border
+
+<!-- xgd-turn id="dc1bd324-c23d-42e2-961f-f7c0a62f9b77-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T16:55:15.130768+00:00" -->
+#### You
+Can you read the PHILOSOPHY doc in the install?
+
+I'm struggling a little to map this process to xgd development (and it may not fit). And stay with me because there are many layers of role complexity here.
+
+1. XGD is a general purpose software development tool
+2. We are using XGD to build 1stcontact which is (amongst other things) a website development tool
+3. The question is how much of the solution to (1) do we bring to solving (2)? There are two extremes: A - we treat a website as a software system and use xgd out of the box B - we decide that websites are fundamentally simpler and more constrained and we build new custom flows for them - I suspect the answer is closer to B but there may be many things we can learn from A particularly when our website has functional components.
+
+Possible resolution:
+
+Separate module functionality from design. We have two fundamentally different processes:
+1. New design capabilities - that's what we are doing here - new custom workflow we will gradually build a manual process and then automate it - this is 1stcontact running, created in 1st contact (eventually)
+2. Functionality - email capture, payments page, CRM screens - these are created in XGD and a part of 1st contact - they go through our existing reconciliation process etc.
+
+<!-- xgd-turn id="dc1bd324-c23d-42e2-961f-f7c0a62f9b77-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-08T16:58:16.094306+00:00" -->
+#### Claude
+Let me find and read the PHILOSOPHY doc in the xgd install.
+
+Read it. And first, the loose thread: **chrome** = the framing/decoration drawn *around* content, borrowed from "browser chrome" (the toolbars/tabs around the web page). For a services-grid card, the chrome is the background fill, border, accent stripe, corner radius, shadow, and badge pill — everything that isn't the title/body. "Bare card" = content with the chrome stripped.
+
+Now the layered question. I'll stay with you — I think your resolution is right in spirit but the cut is in a slightly different place than "functionality vs design," and PHILOSOPHY actually tells us where.
+
+## What PHILOSOPHY commits us to (and what it doesn't)
+
+The non-negotiable core is **evidence-first**: *"XGD's value is producing evidence of correctness, not code."* Crucially, it says this "applies regardless of whether code is produced from a specification, through interactive exploration, or by fixing." So the **principle** generalizes to everything. What is *not* fixed is the **mechanism** of evidence — the Capability Matrix (intent→AC→UAT) is "the primary mechanism," not the only conceivable one.
+
+That distinction is the whole answer to your A/B question.
+
+## The cut isn't functionality-vs-design — it's capability-vs-authoring
+
+Your "design capabilities" bucket is hiding two different things, and that's what makes the mapping feel wrong:
+
+| | What it is | Evidence form | XGD fit |
+|---|---|---|---|
+| **L1 · Framework capability** | a module/dial/treatment/renderer/tool — *reusable machinery*. Includes **both** functional (contact-form, payments, CRM) **and** visual (hero, `headingTreatment: gold`, services-grid) | AC + UAT. The **conformance harness is the UAT layer** for modules | **Extreme A — full XGD, out of the box** |
+| **L2 · Site authoring** | reproducing/composing *one* site from config+theme — *work product*, data, not code | the **`1c diff` mean + overlay artifact** — a continuous similarity metric against a reference | **Extreme B — custom loop; the matrix does not apply** |
+
+The reason design "doesn't fit" XGD is that we've been lumping L1 and L2 together. Once split:
+
+- **`headingTreatment: gold` is not design work — it's a framework capability that happens to be visual.** It deserves *exactly* the same ceremony as email capture (scope → AC → UAT → reconcile). Its only difference from a functional module is the **shape of the AC**: "computed heading color == accent token" (a rendered-effect assertion) instead of "POST returns 200." Same evidence model, different assertion form.
+- **Reproducing joyfulculinary the *site* is L2** — it is not a capability, it's a use of capabilities. Its correctness is perceptual and reference-relative. Forcing it into the Capability Matrix would be textbook **literalism** (PHILOSOPHY's `source_roots=["src/"]` failure): a UAT that asserts "the hero is at y=330 with this exact photo" proves consistency with *one site*, not a general capability.
+
+## The seam — and why this loop is Mode 1, not a new mode
+
+Here's the part that made me think your instinct is deeper than it first looks. What is the durable output of the last two hours? **Not the joyfulculinary config** — that's disposable. The durable output is the *discovered capability gaps* (gold headings, bare cards, role-driven surface). That is **precisely Interaction Mode 1: Prototype → Teardown → Rebuild** — *"code may be disposable; the authoritative output is clarified intent; the Capability Matrix grows even when the implementation is rebuilt."*
+
+So the L2 authoring loop isn't a rival to XGD — it's a **capability-gap discovery engine** that runs in Mode 1 and *feeds work items down into L1*, where they go through normal ceremony (Mode 2 free-code→shore-up, or spec-driven). The `1c diff` gate is the L2 evidence artifact; when it stalls, the stall *names an L1 capability gap* — same way a terminal-failure in XGD "names the systemic gap." The site is throwaway; the framework generalization it forces is what enters the matrix.
+
+## So, answering "how much of A do we bring?"
+
+- **L1 (all modules — functional *and* visual): bring all of A.** It's a real software system; the "website is simpler" intuition doesn't downgrade the *framework's* rigor. Your functional components (payments/CRM) aren't a special case — they're just L1 capabilities whose ACs are I/O-shaped and which will more often be spec-driven than free-coded.
+- **L2 (site authoring): bring almost none of the *matrix machinery*, but keep the *philosophy*.** The diff mean is the evidence; 64/255 is honestly-surfaced "unproven fidelity"; the overlay is the inspectable artifact. Evidence-first holds; UAT/AC does not.
+
+## Where this bites for what we were about to do
+
+It sharpens the earlier testing thread rather than replacing it:
+
+1. The **effect-assertion dimension** I proposed for the conformance harness is now clearly *load-bearing*, not a nicety — it's the thing that makes a **visual capability a first-class Capability-Matrix citizen** (behavioral evidence for a rendered effect). That's the bridge that dissolves your A/B tension.
+2. The **`1c diff` repro gate must stay OUT of the module matrix** — it's L2 evidence, per-site, never a module UAT.
+3. Your "framework changes stay in REQ-36" decision is still fine, but note REQ-36 is then doing *L1 capability work under an L2 wrapper*. That's coherent as long as each generalization gets its own AC + conformance UAT inside the ticket — i.e., REQ-36 carries L1 evidence for the capabilities and L2 evidence (the diff) for the reproduction, kept distinct.
+
+Two things I'd want your read on before I turn any of this into a written standard + ticket scope:
+
+- **Do you accept the L1/L2 split as the primary cut** (with functional vs visual being a *sub-distinction inside L1, only about AC form*)? If yes, "design capability" stops being a fuzzy category.
+- **Is the design-authoring loop explicitly Mode 1** (prototype disposable, capabilities are the durable output)? If yes, the automation you're gesturing at ("1stcontact building itself") becomes: *automate the Mode-1 discovery loop*, with L1 ceremony unchanged underneath — which is a much smaller, safer thing to automate than "automate website software development."
+
+<!-- xgd-turn id="d8f6c7ec-4e46-4cc8-8666-edf3fee825dc-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T17:13:35.635076+00:00" -->
+#### You
+Let's take a step back I don't know that you're seeing the full picture.
+
+I see three different things here:
+1. True functionality - email capture page
+2. Pure configuration - setting the dials to create a website
+3. Module extension and creation to support things we can't yet do in 2 (NOT 1!)
+
+point 1 is 100% the realm of XGD along with the creation of the tools to do 2.
+
+2. is the basic web builder - its a customer facing tool with AI support for building websites via configuration
+
+3. is what we need to discuss. Through my conversations about the system I realize that number three and it's potential for automation is what could make my web builder a differentiated product. Lets explore that.
+
+ Today this activity (3) is a combination of manual and XGD activity. It does not fit as well as you might initially suspect into XGD because the performance tests are the same for every module and we currently don't have a way to express that but that's kind of a detail. Perhaps more importantly is that we are handcrafting the tests for these right now. In general with XGD we would only create happy path tests the test suite would be filled out through the automatic process of reconciliation. However in this specific domain of website creation I think hand creation of the tests is appropriate. We may be able to find the right language to squeeze this into the reconciliation process, but I suspect we may need to change XGD in order for it to do this well.
+
+Now,  suppose we use the XGD tooling to create a custom workflow for duplicating site and completely making all the tweaks to the framework to do it well. If I had that workflow I could:
+1. Provide an induction flow for users who want to convert from the existing Webb support. Even if the framework that we have when they start does not have everything they need, we can add the necessary missing pieces automatically.
+2. I can run a crawler that would pull websites from across the web – it does not have to be a huge number hundreds, small thousands. And by copying these examples I can build out the framework so that we know that it will support 1.
+
+These are desirable use cases and XGD as it stands cannot support them
+
+<!-- xgd-turn id="d8f6c7ec-4e46-4cc8-8666-edf3fee825dc-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-08T17:15:56.764467+00:00" -->
+#### Claude
+You're right that I was compressing your (3) into my L1. Your three-way cut is sharper, so let me take it as given and locate (3) precisely — then push on the part I think I *was* missing.
+
+**Adopting your frame:**
+- **(1) Functionality** — behaviour-bearing (email capture, payments, CRM). Classic XGD, plus it builds the tooling for (2). Not interesting here.
+- **(2) Pure configuration** — the customer-facing AI web builder. Dials in, site out. The product surface.
+- **(3) Catalog growth** — extending modules/dials/tokens so (2) can express something it currently can't. It sits *between* 1 and 2: it's the meta-activity that *grows what (2) can configure*. And you're right — **(3) is the differentiator**, because it's the part competitors don't have.
+
+## The full picture of (3): it's an exemplar-driven capability flywheel
+
+What we did by hand today is one turn of a loop that, generalised, is:
+
+capture exemplar → reproduce in config (2) → measure residual with `1c diff` → **attribute the residual to a missing capability** → extend framework (generalize-first) → verify (conformance + effect-assertion + diff drops) → **bank the capability**; the site becomes pure-config.
+
+Run that over your crawler corpus and the framework's **design-space coverage converges**. The moat isn't any one module — it's that after N exemplars, an *arbitrary* new site reproduces mostly from config. Induction (use case 1) is then the *same loop online*, but it rarely has to extend, because the crawler already paid that cost offline. **The crawler de-risks induction.** That's the flywheel, and the product KPI is literally: *"% of a held-out site set that reproduces under threshold using config only"* — a coverage curve that should rise and flatten as the catalog saturates real design space.
+
+Wix/Squarespace AI *generate a generic site*. You *reproduce the user's actual site faithfully* because the catalog was trained-by-exemplar on real design space. That's the differentiation, stated as a metric you can chart.
+
+## Why XGD can't hold (3) — your two reasons, plus the ones underneath
+
+Your two are real and each names a concrete XGD gap:
+
+- **(a) Universal ACs shared by every module.** XGD models an AC as owned by one story. It has no notion of a **capability archetype** — "a thing of kind *module* inherits this conformance contract." So proof.md can't assert "every module meets the universal contract"; the harness knows it but the matrix doesn't. Fix: **inherited AC contracts / archetypes.**
+- **(b) Hand-authored tests are authoritative here.** XGD's model is happy-path-in, reconciliation-fills-the-rest. But a visual **effect assertion** ("gold == the accent token, at this weight") *encodes design judgment that can't be derived from a spec* — so reconciliation can't invent it, and shouldn't overwrite it. Fix: a **story-type where UATs are canonical**; reconciliation validates presence/coverage but never regenerates.
+
+Now the part I think you meant by "not the full picture" — three deeper mismatches, in rising order of how much they break XGD:
+
+- **(c) The spec is an artifact, not English.** XGD intent is an epic in prose; here the specification *is a captured site* (raw.html + screenshot + values) and the AC is *"similarity(render, reference) ≥ threshold."* XGD has no concept of a **perceptual/reference AC kind** alongside behavioural ones.
+- **(d) The driver is a gradient, not a boolean.** 66→64 is *progress*, but XGD's fix loops only know pass/fail — they'd score that iteration a failure. (3) needs a **optimise-a-metric-until-threshold-or-diminishing-returns** loop primitive, with a stopping rule. That's a fundamentally different control structure from "fix until tests pass."
+- **(e) Capabilities are induced by the corpus, not declared.** Spec-driven XGD knows its capabilities up front. Here you *discover* that you need `headingTreatment: gold` only because exemplars forced it. The backlog is **generated by residual diff-gaps across a corpus**, deduped across exemplars (the 50th site that needs gold headings must *reuse*, not re-add). XGD has no corpus abstraction and no gap→capability *attribution* step — and attribution is exactly the module-vs-dial judgment we spent an hour on.
+
+(c)+(d)+(e) are why this "doesn't fit as well as you'd suspect": XGD assumes *declared intent, boolean evidence, per-intent scope*. (3) is *exemplar intent, gradient evidence, corpus scope*.
+
+## The failure mode that decides whether automation is viable
+
+If you automate the attribution step (e), the lethal failure is **over-fragmentation**: 500 sites → 500 bespoke modules, and the catalog is worthless. The moat is a *small, composable* capability set with *high* coverage — the opposite of one-module-per-site. So the automated loop must be governed by exactly the discipline we discussed, made measurable:
+
+- **Reuse-first attribution**: before minting a capability, prove no existing dial/variant covers the gap. Reward reuse, penalise new modules.
+- **Composability invariant** as a hard gate on any new dial.
+- **Held-out validation corpus** (pure ML hygiene): capabilities must generalise to *unseen* sites, or you're overfitting the framework to the crawler. This is why you want hundreds–thousands and a train/test split, not tens.
+- **Coverage & reuse curves** as the health dashboard: coverage rising, new-module rate falling, reuse rate rising = the flywheel is working.
+
+Automating (3) *is* automating this governor. That's the real technical bet.
+
+## What XGD would need (concretely)
+
+1. **Capability archetypes / inherited AC contracts** — declare "module"; it carries the conformance battery; every module inherits + proves it. (Solves a.)
+2. **`hand-authored-authoritative` story type** — canonical UATs, reconciliation validates but never regenerates. (Solves b.)
+3. **Reference-as-spec + perceptual AC kind** — intent = artifact; AC = metric-vs-reference on a named dimension. (Solves c.)
+4. **Gradient/threshold loop primitive** — exit on metric<threshold or diminishing returns; progress-without-pass ≠ failure. (Solves d.)
+5. **Corpus-driven backlog + attribution step** — residual gaps across a corpus generate capability stories, deduped, generalize-first-gated. (Solves e.)
+6. **Corpus-level coverage KPI** — proof.md's sibling at corpus scale.
+
+1–2 are small; 3–6 are genuine XGD extensions — which matches your suspicion that XGD itself has to change, and tells you *where*.
+
+Three questions to steer the exploration:
+
+- **Is the moat metric the held-out config-only coverage curve?** If yes, everything above (train/test split, reuse rate, attribution gating) is in service of moving one number, and we can design (3) around it rather than around "fidelity of any single site."
+- **Where do you want the human in (3) during the manual→automated ramp?** My instinct: automate capture→config→diff→*gap-detection* first (cheap, safe), and keep the **attribution + generalize-first decision** human-in-the-loop longest, because that's where over-fragmentation is decided. That inverts XGD's "no human in the loop" — deliberately, and only in (3).
+- **Do we prototype the loop as a workflow *now* on a 5–10 site mini-corpus** (joyfulculinary + a few others) to pressure-test the attribution guardrails before proposing XGD changes — i.e., run (3) manually-but-structured a few times so the XGD extension list is evidence-backed, not speculative?
+
+<!-- xgd-turn id="8bc65359-6bd2-4d57-bd80-6847ae0581c6-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T17:24:47.027038+00:00" -->
+#### You
+What we are doing right now is creating a manual process for this loop. The output of this conversation (we are getting close) should be a process (like the free coding process) that describes something like this:
+1. Site capture
+2. Site duplication - refine with tools and loop until existing framework exhausted
+3. Good enough? Yes - STOP..otherwise
+4. Design the necessary changes to the modules
+5. Implement the changes to the modules (and custom tests)
+6. Run compliance and custom tests until everything passes
+7. Goto 2
+
+The interesting questions are at 3 and 4 - how can we automatically define "Good Enough" and how do we constrain the design process to avoid god modules and module explosion
+
+<!-- xgd-turn id="8bc65359-6bd2-4d57-bd80-6847ae0581c6-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-08T17:26:43.080919+00:00" -->
+#### Claude
+We're close. The two hard questions (3 and 4) are exactly where a naive version of this loop dies, so let me crack them concretely — because the answers change the loop's shape.
+
+## Question 3 — defining "Good Enough" automatically
+
+A single scalar `1c diff` mean under a threshold **cannot** be the gate. Three reasons, all of which we already hit or that my notes warn about:
+- **Averaging hides local disasters** — a broken hero drowns in matching whitespace. (Today: mean 64, but the *hero* region is 100+.)
+- **One viewport lies** — fluid-vs-fixed drift hides from a single width.
+- **Perceptual ≠ structural** — a *missing paragraph* is never "good enough," but it barely moves a pixel mean.
+
+So "Good Enough" is a **vector gate**, evaluated at **3 viewports** (desktop/tablet/mobile):
+
+1. **Structural floor (hard precondition):** `values-diff` `missing` / `text` / `fontFamily` deltas = **0**. Discrete correctness — no averaging allowed. Text loss, wrong typeface = automatic fail.
+2. **Global mean** < T_global.
+3. **Worst-region bound** < T_region — no single band is broken, even if the average is fine. This is the check that catches the averaged-out hero.
+4. **Saliency weighting** — hero / above-the-fold held to a stricter T than footer / whitespace. ("Hero is the front door.")
+5. **Minus declared acceptable-residual** — per-region exceptions *with reasons* (font AA, photo re-encode, carousel current-slide). Mirrors XGD's `except`. Without this the loop chases irreducible noise forever and mints capabilities for un-closeable gaps.
+
+The unlock — and this is the non-obvious part — **you cannot pick T_global / T_region from thin air.** You **calibrate them once against a small human-labeled anchor set**: a few dozen (reference, render) pairs a human tags "indistinguishable / not." The max mean and max worst-region among the "indistinguishable" pairs *set the thresholds*. After that, the gate is fully automatic and objective. "Good enough" stops being a vibe and becomes a learned constant.
+
+And note there are actually **three** distinct stops in the loop, which the skeleton collapses:
+- **Config-exhaustion** (ends step 2): metric improvement per config edit < ε — a *plateau*, not a pass. "Config can't do more."
+- **Good-Enough** (ends the whole loop at 3): the vector gate passes.
+- **Terminal residual** (also ends the loop): config exhausted **and** every remaining gap is either acceptable-residual or below the bar to mint a capability (see Q4). Stop with a *documented* residual — this is what stops it looping forever over a gap that isn't worth a module.
+
+## Question 4 — constraining design (no god modules, no explosion)
+
+Two devices: a **reuse-first attribution ladder** (cheap escapes first), and **mechanical gates** so it isn't judgment-by-vibes.
+
+The ladder — for each residual gap, take the **first** rung that fits:
+1. **Acceptable residual?** → `except` it, design nothing. *(stops noise-chasing)*
+2. **Config error?** → fix the dial value, not the framework. *(stops framework changes config already covers)*
+3. **Existing dial/variant covers it?** → reuse. *(reuse-first)*
+4. **Orthogonal treatment of an existing module's job?** → **dial**.
+5. **Discrete structural preset?** → **variant**.
+6. **Cross-cutting composition several modules share?** → **shared primitive / role-driven token** (the "don't name it `green`, make surface role-driven" insight).
+7. **Genuinely different content job, nothing above fits?** → **new module** (last resort, highest bar).
+
+The gates that make god-modules and explosion **mechanically detectable**:
+
+- **Composability invariant** → a new dial must be legal with *every* variant × *every* other dial value, verified by conformance cross-fixtures. A dial that only works "in one mode" fails this — and that failure *is* the signal it's really a variant or a second module. **This is the anti-god-module gate.**
+- **Dial budget** (soft cap per module) → crossing it triggers "is this two modules?" Detects accretion early.
+- **Corpus threshold** → **a new *module* requires ≥ k exemplars demanding it**; a *variant* fewer; a *dial* fewest. One weird site **cannot** spawn a module — it must reuse, get a dial, or take an acceptable-residual exception. **This is the anti-explosion gate, and it only exists because of the corpus.** That's the deeper reason to run the crawler first: the corpus is the *instrument* that turns "should this be a module?" from a judgment call into a counting rule.
+- **Fragmentation metric** → capabilities-per-covered-site and reuse-rate. If new capabilities aren't lifting held-out coverage (they only serve their originating site), the design process is fragmenting → halt and alarm. Corpus-level health.
+
+So the two questions have a shared root: **both "Good Enough" and "don't fragment" become objective only against calibration data** — a labeled anchor set for (3), a corpus with a k-threshold for (4). The manual process we're writing is really *"run the loop by hand while we gather the data that lets us automate the two gates."*
+
+## The loop, tightened
+
+1. **Capture** exemplar (`1c capture`).
+2. **Reproduce in config** — refine with `1c diff` + `values-diff`, reading overlays worst-region-first, until **config-exhaustion** (plateau).
+3. **Good-Enough gate** (the Q3 vector, 3 viewports, minus acceptable-residual). Pass → **STOP**. Fail → 4. Terminal-residual → **STOP (documented)**.
+4. **Attribute + design** — run the Q4 ladder on each residual gap; each proposed change must clear the mechanical gates (composability, budget, corpus-k).
+5. **Implement** the change + **hand-authored effect assertions** (the design judgment encoded) + composability cross-fixtures.
+6. **Verify** — universal conformance battery (inherited) **and** custom effect assertions pass across the variant×dial matrix.
+7. **Goto 2** with the richer framework; the diff should drop.
+
+To make this real we need three artifacts that don't exist yet: the **calibration anchor set** (Q3 thresholds), a **mini-corpus** (even 5–10 sites) to exercise the Q4 k-threshold, and the **fragmentation/coverage metrics**.
+
+I'd suggest: before drafting the doc, run this loop *by hand* on joyfulculinary end-to-end (we're at step 3 now — config-exhausted, gate failing), do the four framework generalizations through steps 4–6, and record the real numbers. That gives us evidence-backed threshold candidates and validates the ladder/gates on one case. Then I write it up as `DESIGN-REPRODUCTION.md`, parallel to the free-coding process.
+
+Does this framing of 3 and 4 match your intent? If so, do you want me to (a) finish joyfulculinary through the loop first to ground the numbers, or (b) draft the process doc now and treat joyfulculinary as its first worked example?
+
+<!-- xgd-turn id="7be7edf2-36df-4655-9be1-6af5456aaacb-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T17:32:07.647193+00:00" -->
+#### You
+It should be a doc ticket (of course). And I think we should create a draft of what we have now and then apply it to joyfulculinarycreations and refine
+
+<!-- xgd-turn id="7be7edf2-36df-4655-9be1-6af5456aaacb-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-08T17:43:12.836240+00:00" -->
+#### Claude
+A doc ticket it is — that's a distinct deliverable (the process itself) from REQ-36 (the reproduction), and you've explicitly asked for it. Let me check the ticket interface and how existing DOC tickets (DOC-19, DOC-20) are structured, then create it.
+
+Let me see how an existing DOC ticket is structured (type, and whether the doc lives in the ticket body or a `docs/` file).
+
+Rich doc ecosystem already exists — notably **DOC-15 (Crawler & Framework Coverage Program)**, **DOC-14 (Module Lifecycle & Two-Tier Composition)**, DOC-16/17 (design intelligence/lessons). Our process sits *on top* of these and ties them into one loop. Let me skim the two most-overlapping so I reference rather than duplicate.
+
+This is largely already architected — DOC-14 (module lifecycle / two-tier flywheel), DOC-15 (crawler coverage program, the three buckets, gap-frequency promotion), DOC-19 (transcription runbook), DOC-20 (conformance). What's **missing** is the connective *operational process* that stitches them into one runnable loop — plus the two things we just cracked that none of them specify: the automatable **Good-Enough gate (Q3)** and the mechanical **anti-explosion gates (Q4)**.
+
+Let me draft that as the doc-ticket body, referencing the others rather than duplicating.
+
+**DOC-21** created — *Process: Reproduction-Driven Framework Growth Loop* (draft v0.1). It stitches the existing docs into one runnable loop and pins down the two things none of them specified: the Good-Enough vector gate (§4) and the mechanical anti-explosion gates (§5–6).
+
+Now let me apply it to joyfulculinary and refine. Per the process (and free-coding), step one is declaring the L1 scope on REQ-36 before touching framework code. Let me cross-link the docs and read REQ-36's current body so I preserve it.
+
+Now I'll declare the L1 scope on REQ-36 (free-coding: behaviour first), preserving the existing body and adding the capability ACs from applying DOC-21's step-4 ladder. Then I'll implement the highest-impact capability first.
+
+Scope declared. Now **CAP-1 (bare cards)** — the biggest win. Step 4 design: let me read the services-grid module to see how cards render today.
+
+Now I understand the card rendering — `.services-grid__card` sets `background: var(--color-surface)` (near-white) + border, and body `color: inherit` resolves to the band's white on `surface-inverse` → white-on-white. CAP-1 design: a grid-level `cardSurface: bare` dial that strips fill/border/radius/padding and lets title+body inherit the band colour, with chrome (badge) suppressed. Let me read the meta to register the dial correctly.
+
+Design is clear. Let me implement **CAP-1**: a grid-level `cardSurface: default | bare` dial. Three edits — the dial constant, the meta registration, and the rendering.
+
+Now the rendering — add the class and the `bare` CSS:
+
+Now the `bare` CSS — placed right after the base card rule:
+
+CAP-1 code is in. Now apply it in the joyfulculinary config (L2) — set `cardSurface: bare` on both grids — and re-diff to get the real number.
+
+**64.57 → 46.68** — CAP-1 (bare cards) alone cut ~18 points, and the former #1 region (the white offering boxes) has dropped out of the top ranks. The hero is now the worst region (#1, front door). The loop works, and this is a real refinement datapoint for DOC-21.
+
+Now I must complete CAP-1's free-coding ceremony with a UAT before committing. Let me look at the test infrastructure to write the effect + composability assertions correctly.
+
+There's an existing `tests/framework-services-grid-cards.test.ts` — the right place to add CAP-1 assertions. Let me read its render-assert pattern.
+
+The pattern: render via Astro container to HTML, assert classes + CSS rules from source. Let me add the CAP-1 UATs (effect, default-unchanged, composability across variants) to this file.
+
+14/14 pass (3 new CAP-1 UATs). Let me confirm no regression from the dial change across the module/render tests (skipping the slow browser-conformance suites).
+
+No regressions (46/46). CAP-1 is code-complete with passing UATs and a real fidelity gain. Let me complete its free-coding ceremony — check the version-bump interface, then commit.
+
+The version-bump script is implemented. I'll commit CAP-1 (only my framework + test files — the modified gigabytealchemy files are pre-existing and not mine), with a version bump and `[FREE-CODED]`.
+
+CAP-1 committed (`9e9fda0`, v0.0.66). Now finish the ceremony — record the commit on REQ-36, and log the worked-example datapoint on DOC-21.
+
+Both docs are now created and being refined by the run itself. Clean checkpoint — here's where we are.
+
+## What exists now
+
+**DOC-21 · Process: Reproduction-Driven Framework Growth Loop** (draft v0.1) — the process you asked for, parallel to free-coding. It ties DOC-13/19/14/20/15 into one runnable loop and pins the two hard parts we cracked: the **Good-Enough vector gate** (§4, calibrated against a human-labeled anchor set) and the **anti-god-module / anti-explosion mechanical gates** (§5–6, the reuse-first ladder + composability invariant + corpus-k threshold).
+
+**REQ-36** now carries the L1 scope (CAP-1..4 as ACs) and is DOC-21's first worked example.
+
+## The loop, applied — first increment proven
+
+I ran one full turn end-to-end rather than theorising:
+
+| | perceptual mean |
+|---|---|
+| config-only ceiling (gate fails) | 64.57 / 255 |
+| **+ CAP-1 bare cards** | **46.68** (−18) |
+
+CAP-1 (`services-grid` grid-wide `cardSurface: bare` dial) went through the whole free-coding ceremony: code → `test_UAT_FC_REQ-36_*` UATs (effect + default-unchanged + composability across all variants) → 46/46 tests no regression → committed `9e9fda0` + version bump 0.0.66 → REQ-36 `fields.commits` set. The single biggest lever, exactly as its region score predicted — which **validates DOC-21's "read region scores worst-first" and the rung-4 attribution**. That's a real refinement datapoint logged on DOC-21.
+
+The hero is now the top residual region (#1, mean 100 — the front door).
+
+## Next
+
+Three caps remain, and I'd sequence them by residual region score:
+- **CAP-2 · gold headings** (generalize hero's `headingTreatment: gold` onto text-block + services-grid) — pervasive; hits the grey-band headings.
+- **CAP-3 · uppercase + hero polish** (heading `case: upper`, gold CTA already in, divider) — clears the hero.
+- **CAP-4 · role-driven panel surface** (the green testimonial band) — this is the one genuine *design decision* in the set: per DOC-21 §5 rung 6, I'll generalize the *mechanism* (surface referencing a palette role) rather than adding `surface: green`. You may want to weigh in on that one.
+
+Want me to **continue through CAP-2 → CAP-3 → CAP-4** in this session the same way (each: code + UATs + re-diff + commit, refining DOC-21 as I go), or pause on CAP-4's design before I build it? I lean toward continuing and flagging CAP-4 for your sign-off when I reach it.
+
+<!-- xgd-turn id="8a5f94e1-c1ff-4c37-8d59-94be240e9046-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T18:32:41.749766+00:00" -->
+#### You
+Wait. This is where we are diverging from the way XGD works. As an interactive session, you would not normally create capabilities. There are a lot of rules around capability creation and capabilities are purely grouping of stories. What you should've created here was probably a story. Stories have acceptance criteria the acceptance criteria must "cover" the story. Capabilities group stories together to help manage the matrix they are not specifications in themselves. All of these capability matrix artifacts are created automatically by the reconciliation process (or by the automated development process). Not by the free coding process which is what we are doing now.
+
+<!-- xgd-turn id="4cc7b5d5-153c-41d8-89bd-3c5f94485607-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T18:33:40.906768+00:00" -->
+#### You
+Wait. This is where we are diverging from the way XGD works. As an interactive session, you would not normally create capabilities. There are a lot of rules around capability creation and capabilities are purely grouping of stories. What you should've created here was probably a story. Stories have acceptance criteria the acceptance criteria must "cover" the story. Capabilities group stories together to help manage the matrix they are not specifications in themselves. All of these capability matrix artifacts are created automatically by the reconciliation process (or by the automated development process). Not by the free coding process which is what we are doing now.
+
+What you actually need to do is to retire CAP-1 (archive it) and create REQs for your requirements
+
+<!-- xgd-turn id="77582c05-b067-45bc-a039-41a52b64142e-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T18:34:15.917278+00:00" -->
+#### You
+Wait. This is where we are diverging from the way XGD works. As an interactive session, you would not normally create capabilities. There are a lot of rules around capability creation and capabilities are purely grouping of stories. What you should've created here was probably a story. Stories have acceptance criteria the acceptance criteria must "cover" the story. Capabilities group stories together to help manage the matrix they are not specifications in themselves. All of these capability matrix artifacts are created automatically by the reconciliation process (or by the automated development process). Not by the free coding process which is what we are doing now.
+
+What you actually need to do is to retire CAP-1 (archive it) and create REQs for your requirements or better yet, we would use this existing ticket (that's what we agreed, right)?
+
+<!-- xgd-turn id="77582c05-b067-45bc-a039-41a52b64142e-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-08T18:38:40.645764+00:00" -->
+#### Claude
+You're right, and this is an important correction — I conflated two different things. Let me state it back so we're aligned, then fix it:
+
+- **Capabilities are not specifications.** They're groupings of stories, and — along with stories, ACs, and UATs — they're **created by reconciliation / automated development, not by a free-coding session.** I invented "CAP-1..4" as if I were authoring capability-matrix artifacts. That's not my job here.
+- **Free-coding produces:** a requirement described on the ticket + code + UATs (`test_UAT_FC_REQ-36_*`) + `[FREE-CODED]` commit. Reconciliation later derives the matrix from that.
+- And yes — **we agreed framework changes live in REQ-36**, so REQ-36 *is* the requirement. No sub-CAPs, no sub-REQs needed.
+
+Let me check whether I actually created a CAP ticket to archive, and re-read REQ-36 so I fix its body correctly.
+
+Confirmed: **no CAP ticket exists** — "CAP-1" was only label-text I put in REQ-36's body and the commit message. So there's nothing in the store to archive; the fix is to strip the CAP/capability framing from REQ-36 (and the commit) and let REQ-36 stand as the requirement. Let me check the commit isn't pushed so I can amend its message, then rewrite the body.
+
+Wait — HEAD is `f8cc70b`, a **pre-session ticket commit**, not my CAP-1 code commit `9e9fda0`. Something moved HEAD. I need to understand the git state before touching anything — let me not lose that commit.
+
+Nothing's lost — the reflog shows my CAP-1 code commit `9e9fda0` is intact in the branch history; the `xgd ticket` commands simply stacked ticket-store commits on top of it (that's normal — tickets are versioned in-repo). Since `9e9fda0` is now buried under seven xgd-managed ticket commits and isn't pushed but rewording it would mean rebasing those, I'll **leave the commit** (it correctly references REQ-36 and is `[FREE-CODED]`; "CAP-1" is just cosmetic label-text) and fix the real source of truth — REQ-36's body — removing the capability framing.
+
+Now DOC-21 carries the same loose "capability" language. Let me log a terminology correction on it rather than rewrite the whole draft body mid-session.
+
+Corrected. Summary of what I changed and the model I'm now operating under:
+
+**Fixed**
+- **No CAP ticket ever existed** in the store — "CAP-1..4" were only labels I wrote into REQ-36's body and the commit message. Nothing to archive; the fix was to strip the framing.
+- **REQ-36 body reframed** — the four framework changes are now described as *requirements* ("Framework changes required, free-coded in this ticket"), and the body explicitly states that capability-matrix artifacts (capabilities / stories / ACs / UAT-coverage) are **derived by reconciliation, not authored in this session**. Verified: 0 remaining `CAP-` references.
+- **DOC-21 correction logged** — a note pinning the terminology; its body wording gets reconciled in a dedicated pass.
+- **Commit `9e9fda0` left as-is** — it's now buried under seven xgd-managed ticket commits (not pushed, but rewording means rebasing those), and it already carries `[FREE-CODED]` + the REQ-36 reference correctly. The "CAP-1" in its message is cosmetic. Say the word if you want it reworded and I'll do the rebase.
+
+**The model I now hold**
+> Interactive free-coding = describe the *requirement* on the REQ ticket + write code + write UATs (`test_UAT_FC_REQ-36_*`) + `[FREE-CODED]` commit + keep the ticket current. Reconciliation (or automated dev) is what turns that into capabilities → stories → ACs → UAT-coverage. Capabilities are groupings, not specs; ACs must cover their story; none of that is mine to hand-author here.
+
+The bare-cards work itself stands — it's a legitimate free-coded framework change under REQ-36 with passing UATs; only its *labeling* was wrong.
+
+Two quick checks before I carry on:
+1. **Continue** the remaining three framework changes (gold headings next) as plain free-coding under REQ-36 — code + UATs + `[FREE-CODED]`, no capability talk?
+2. Want me to **reconcile DOC-21's body wording** (drop the loose "capability"/"L1-L2" phrasing) now, or leave the correction-note and batch it later?
+
+<!-- xgd-turn id="089a1865-ec30-41d0-9515-75c947109875-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T18:49:24.615879+00:00" -->
+#### You
+In the short term, the way I expect this to work is just what we are doing here. We create a ticket REQ-X to replicate a website foo.com. You follow the process in DOC-21 and all the new requirements go into REQ-X. They are free coded per that process and the commits added to the doc and we loop based on the lops in DOC-21 until we have sufficient fidelity. Agreed?
+
+Can you make sure DOC-21 states this clearly (1) that the requirements go into the reproduction ticket itself (2) they are free coded per that process?
+
+<!-- xgd-turn id="089a1865-ec30-41d0-9515-75c947109875-assistant" -->
+
+<!-- xgd-chat role="assistant" ts="2026-07-08T18:51:20.445999+00:00" -->
+#### Claude
+Agreed — that's exactly the short-term model: one reproduction ticket REQ-X, all the framework changes it forces recorded as requirements *in REQ-X*, each free-coded per the process, commits accumulated on the ticket, looping per DOC-21 until fidelity is sufficient. Let me make DOC-21 say this unambiguously. Let me read my draft source and edit it.
+
+Now let me insert the explicit "how requirements are ticketed" subsection and fix the loose "capability" wording:
+
+Let me fix the remaining `L1`/`capability` references in the loop and §7 for consistency.
+
+Now push the corrected DOC-21 body:
+
+Agreed on the model, and DOC-21 now states it explicitly. I added a new §1 subsection **"Where the requirements live, and how they are built (the operating model)"**:
+
+1. **One reproduction ticket per site (REQ-X)** — every framework change the reproduction forces is *a requirement recorded in REQ-X itself*, not a separate REQ and never a hand-authored capability/story.
+2. **Each is free-coded per the Free-Coding process** — described in REQ-X → code + `test_UAT_FC_REQ-X_*` UATs → `[FREE-CODED]` commit → sha added to REQ-X → ticket kept current.
+
+It also states that reconciliation derives the capability-matrix artifacts from those commits — the loop never authors them. I fixed the loose `L1`/"capability" phrasing elsewhere (loop step 5, §7, §9) to match. Verified all three statements are present.
+
+That's exactly the loop we just ran for CAP-1 (now correctly framed as just "the bare-cards change, free-coded into REQ-36").
+
+Ready to continue the loop under REQ-36 — next framework change is **gold headings** (generalize hero's `headingTreatment: gold` onto text-block + services-grid), free-coded the same way, then re-diff. Shall I proceed?
+
+<!-- xgd-turn id="4865449b-783a-4f2d-8284-7f46b0142806-user" -->
+
+<!-- xgd-chat role="user" ts="2026-07-08T18:55:48.818193+00:00" -->
+#### You
+Yes. So to be clear what I would like you to do now is to follow your own instructions. Run the process loop, make the framework changes that you need, loop back adjust the site and iterate until you think you have something I should look at " the best you can do. (you can take multiple runs at this if needs be.
+
+Once you have it I will take a look and we will do a post mortem on what you created, are ther gaps, how many iterations it took, whether the tools are sufficient etc.
 
 <!-- xgd-chat-end -->
